@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+/* ─── Kol (קול) Theme ────────────────────────── */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-destructive: var(--destructive);
+  --color-ring: var(--ring);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-confidence-low: var(--confidence-low);
+  --color-confidence-medium: var(--confidence-medium);
+  --font-sans: var(--font-heebo);
+}
+
+:root {
+  /* Pink/White theme inspired by Tavus */
+  --background: #FEFEFE;
+  --foreground: #1a1a2e;
+  --primary: #E91E8C;
+  --primary-foreground: #ffffff;
+  --secondary: #FDF0F7;
+  --accent: #FCE4F0;
+  --muted: #F5F5F7;
+  --muted-foreground: #6B7280;
+  --border: #F0D4E4;
+  --card: #FFFFFF;
+  --card-foreground: #1a1a2e;
+  --destructive: #EF4444;
+  --ring: #E91E8C;
+  --sidebar-bg: #FDF5F9;
+  --sidebar-hover: #FBE8F2;
+  --confidence-low: #FECDD3;
+  --confidence-medium: #FDE68A;
+  --radius: 12px;
+}
+
+.dark {
+  --background: #0F0A12;
+  --foreground: #F5F0F3;
+  --primary: #F472B6;
+  --primary-foreground: #0F0A12;
+  --secondary: #1F1525;
+  --accent: #2D1F33;
+  --muted: #1A1320;
+  --muted-foreground: #9CA3AF;
+  --border: #2D1F33;
+  --card: #16101C;
+  --card-foreground: #F5F0F3;
+  --ring: #F472B6;
+  --sidebar-bg: #130E18;
+  --sidebar-hover: #1F1525;
+  --confidence-low: #7F1D1D;
+  --confidence-medium: #78350F;
+}
+
+/* ─── Global Styles ─────────────────────────── */
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── RTL Support ────────────────────────────── */
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* ─── Scrollbar ──────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* ─── Waveform Styling ──────────────────────── */
+
+.wavesurfer-region {
+  border-radius: 4px;
+}
+
+/* ─── Animations ─────────────────────────────── */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-pink {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(233, 30, 140, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(233, 30, 140, 0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-pulse-pink {
+  animation: pulse-pink 2s infinite;
+}

@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+out/
+
+# Environment — NEVER commit API keys
+.env
+.env.local
+backend/.env
+**/.env
+
+# Uploads & processing
+backend/uploads/
+backend/processed/
+backend/exports/
+
+# Database
+*.db
+*.db-journal
+*.db-wal
+
+# Whisper models (large files)
+backend/models/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
