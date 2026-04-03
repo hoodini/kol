@@ -4,6 +4,7 @@ Handles file uploads, URL downloads, and folder scanning.
 """
 
 import asyncio
+import logging
 import shutil
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from app.models import Project
 from app.schemas import TranscribeFolderRequest, TranscribeURLRequest
 from app.services.transcription_manager import get_available_engines, transcribe_file
 from app.services.url_downloader import download_audio, download_playlist, get_url_info
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/transcribe", tags=["transcribe"])
 
@@ -74,6 +77,7 @@ async def upload_and_transcribe(
     # Start transcription in background
     background_tasks.add_task(_run_transcription, project.id, upload_path, engine, language)
 
+    logger.info(f"[job:{project.id[:8]}] Upload accepted: {file.filename} engine={engine} lang={language}")
     return {"project_id": project.id, "status": "started"}
 
 
@@ -258,14 +262,24 @@ async def transcribe_folder(
 
 async def _run_transcription(project_id: str, file_path: Path, engine_id: str, language: str):
     """Background task: transcribe a local file."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[job:{project_id[:8]}] Starting transcription: {file_path.name} engine={engine_id}")
     async with async_session() as db:
         result = await db.get(Project, project_id)
         if result:
-            await transcribe_file(result, file_path, engine_id, language, db, _notify_progress)
+            try:
+                await transcribe_file(result, file_path, engine_id, language, db, _notify_progress)
+                logger.info(f"[job:{project_id[:8]}] Completed successfully")
+            except Exception as e:
+                logger.error(f"[job:{project_id[:8]}] Failed: {e}")
 
 
 async def _download_and_transcribe(project_id: str, url: str, engine_id: str, language: str):
     """Background task: download from URL then transcribe."""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"[job:{project_id[:8]}] Starting download+transcribe: {url} engine={engine_id}")
     async with async_session() as db:
         project = await db.get(Project, project_id)
         if not project:

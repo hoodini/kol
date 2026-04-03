@@ -150,7 +150,12 @@ export default function ProjectsPage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{project.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold truncate">{project.name}</h3>
+                      <span className="text-[10px] font-mono text-muted-foreground/50 flex-shrink-0" dir="ltr">
+                        {project.id.slice(0, 8)}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <StatusIcon className={cn("w-4 h-4", status.color)} />
@@ -165,6 +170,15 @@ export default function ProjectsPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Error message */}
+                    {project.status === "error" && project.error_message && (
+                      <p className="mt-1.5 text-xs text-destructive/80 truncate" dir="ltr" title={project.error_message}>
+                        {project.error_message.length > 120
+                          ? project.error_message.slice(0, 120) + "..."
+                          : project.error_message}
+                      </p>
+                    )}
 
                     {/* Progress bar for in-progress */}
                     {(project.status === "processing" || project.status === "downloading") && (

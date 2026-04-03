@@ -143,11 +143,12 @@ async def transcribe_file(
     Updates the project status in the database as it progresses.
     Automatically falls back to other engines if the selected one fails.
     """
+    job = f"[job:{project.id[:8]}]"
     try:
         # Resolve engine (with fallback if primary unavailable)
         active_engine_id, engine = await _resolve_engine(engine_id)
         if active_engine_id != engine_id:
-            logger.info(f"Using '{active_engine_id}' instead of requested '{engine_id}'")
+            logger.info(f"{job} Using '{active_engine_id}' instead of requested '{engine_id}'")
 
         # 1. Update status → processing
         project.status = "processing"
@@ -254,11 +255,11 @@ async def transcribe_file(
         if on_progress:
             on_progress(project.id, 100.0, "Transcription complete!")
 
-        logger.info(f"Transcription complete: {project.name} ({len(merged.segments)} segments)")
+        logger.info(f"{job} Transcription complete: {project.name} ({len(merged.segments)} segments)")
 
     except Exception as e:
         error_detail = str(e) or f"{type(e).__name__}: {repr(e)}"
-        logger.error(f"Transcription failed for {project.name}: {error_detail}")
+        logger.error(f"{job} Transcription failed for {project.name}: {error_detail}")
         logger.error(traceback.format_exc())
         project.status = "error"
         project.error_message = error_detail
