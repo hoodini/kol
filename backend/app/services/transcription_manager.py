@@ -171,10 +171,13 @@ async def transcribe_file(
         logger.info(f"Transcription complete: {project.name} ({len(merged.segments)} segments)")
 
     except Exception as e:
-        logger.error(f"Transcription failed for {project.name}: {e}")
+        import traceback
+        error_detail = str(e) or f"{type(e).__name__}: {repr(e)}"
+        logger.error(f"Transcription failed for {project.name}: {error_detail}")
+        logger.error(traceback.format_exc())
         project.status = "error"
-        project.error_message = str(e)
+        project.error_message = error_detail
         await db.commit()
         if on_progress:
-            on_progress(project.id, -1, f"Error: {e}")
+            on_progress(project.id, -1, f"Error: {error_detail}")
         raise

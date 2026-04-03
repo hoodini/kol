@@ -9,6 +9,7 @@ import json
 import logging
 from pathlib import Path
 
+
 import httpx
 
 from app.config import settings
@@ -47,6 +48,7 @@ class GroqEngine:
         self,
         audio_path: str,
         language: str = "he",
+        max_retries: int = 5,
     ) -> ChunkResult:
         """Send chunk to Groq API and parse verbose JSON response."""
         if not settings.groq_api_key:
@@ -56,22 +58,33 @@ class GroqEngine:
         if not audio_file.exists():
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            with open(audio_file, "rb") as f:
-                response = await client.post(
-                    GROQ_API_URL,
-                    headers={"Authorization": f"Bearer {settings.groq_api_key}"},
-                    files={"file": (audio_file.name, f, "audio/wav")},
-                    data={
-                        "model": self.model,
-                        "language": language,
-                        "response_format": "verbose_json",
-                        "timestamp_granularities[]": "segment",
-                    },
-                )
+        for attempt in range(max_retries):
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                with open(audio_file, "rb") as f:
+                    response = await client.post(
+                        GROQ_API_URL,
+                        headers={"Authorization": f"Bearer {settings.groq_api_key}"},
+                        files={"file": (audio_file.name, f, "audio/wav")},
+                        data={
+                            "model": self.model,
+                            "language": language,
+                            "response_format": "verbose_json",
+                            "timestamp_granularities[]": "segment",
+                        },
+                    )
 
-        if response.status_code != 200:
-            raise RuntimeError(f"Groq API error {response.status_code}: {response.text}")
+            if response.status_code == 429:
+                wait = min(2 ** attempt * 3, 30)
+                logger.warning(f"Groq rate limit hit, retrying in {wait}s (attempt {attempt + 1}/{max_retries})")
+                await asyncio.sleep(wait)
+                continue
+
+            if response.status_code != 200:
+                raise RuntimeError(f"Groq API error {response.status_code}: {response.text}")
+
+            break
+        else:
+            raise RuntimeError("Groq API rate limit exceeded after max retries")
 
         data = response.json()
         segments = []
