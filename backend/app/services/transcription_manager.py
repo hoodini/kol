@@ -1,10 +1,12 @@
 """
 Kol (קול) - Transcription Manager
 Orchestrates the full pipeline: upload → convert → chunk → transcribe → merge → store.
+Engine fallback: if the selected engine fails, automatically tries the next available engine.
 """
 
 import asyncio
 import logging
+import traceback
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -31,6 +33,9 @@ ENGINES: dict[str, TranscriptionEngine] = {
     "huggingface": HuggingFaceEngine(),
 }
 
+# Fallback order — tried in sequence when the selected engine fails
+FALLBACK_ORDER = ["groq", "huggingface", "local", "gemini"]
+
 
 def get_engine(engine_id: str) -> TranscriptionEngine:
     """Get engine by ID."""
@@ -53,6 +58,75 @@ async def get_available_engines() -> list[dict]:
     return result
 
 
+async def _resolve_engine(engine_id: str) -> tuple[str, TranscriptionEngine]:
+    """
+    Resolve which engine to use. If the requested engine isn't available,
+    find the first available fallback.
+    Returns (engine_id, engine_instance) or raises if nothing is available.
+    """
+    engine = get_engine(engine_id)
+    if await engine.is_available():
+        return engine_id, engine
+
+    logger.warning(f"Engine '{engine_id}' is not available, searching for fallback...")
+
+    for fallback_id in FALLBACK_ORDER:
+        if fallback_id == engine_id:
+            continue
+        fallback = ENGINES[fallback_id]
+        if await fallback.is_available():
+            logger.info(f"Falling back from '{engine_id}' to '{fallback_id}'")
+            return fallback_id, fallback
+
+    raise RuntimeError(
+        f"No transcription engines available. "
+        f"Tried: {engine_id}, then fallbacks {FALLBACK_ORDER}. "
+        f"Check API keys in .env or install local Whisper."
+    )
+
+
+async def _transcribe_chunk_with_fallback(
+    chunk_path: Path,
+    language: str,
+    primary_engine_id: str,
+    primary_engine: TranscriptionEngine,
+    failed_engines: set[str],
+) -> tuple[ChunkResult, str]:
+    """
+    Transcribe a single chunk. If the primary engine fails, try fallbacks.
+    Returns (result, engine_id_used).
+    """
+    # Try the primary engine first (unless already marked as failed)
+    if primary_engine_id not in failed_engines:
+        try:
+            result = await primary_engine.transcribe_chunk(str(chunk_path), language)
+            return result, primary_engine_id
+        except Exception as e:
+            logger.warning(f"Engine '{primary_engine_id}' failed on {chunk_path.name}: {e}")
+            failed_engines.add(primary_engine_id)
+
+    # Try fallbacks
+    for fallback_id in FALLBACK_ORDER:
+        if fallback_id in failed_engines:
+            continue
+        fallback = ENGINES[fallback_id]
+        if not await fallback.is_available():
+            continue
+        try:
+            logger.info(f"Trying fallback engine '{fallback_id}' for {chunk_path.name}")
+            result = await fallback.transcribe_chunk(str(chunk_path), language)
+            return result, fallback_id
+        except Exception as e:
+            logger.warning(f"Fallback engine '{fallback_id}' also failed: {e}")
+            failed_engines.add(fallback_id)
+
+    raise RuntimeError(
+        f"All engines failed for {chunk_path.name}. "
+        f"Tried: {primary_engine_id} + fallbacks. "
+        f"Failed engines: {failed_engines}"
+    )
+
+
 ProgressCallback = Callable[[str, float, str], None]  # (project_id, progress, message)
 
 
@@ -67,17 +141,17 @@ async def transcribe_file(
     """
     Full transcription pipeline for a single file.
     Updates the project status in the database as it progresses.
+    Automatically falls back to other engines if the selected one fails.
     """
     try:
-        engine = get_engine(engine_id)
-
-        # Check engine availability
-        if not await engine.is_available():
-            raise RuntimeError(f"Engine '{engine_id}' is not available. Check API keys or dependencies.")
+        # Resolve engine (with fallback if primary unavailable)
+        active_engine_id, engine = await _resolve_engine(engine_id)
+        if active_engine_id != engine_id:
+            logger.info(f"Using '{active_engine_id}' instead of requested '{engine_id}'")
 
         # 1. Update status → processing
         project.status = "processing"
-        project.engine_used = engine_id
+        project.engine_used = active_engine_id
         project.progress = 5.0
         await db.commit()
         if on_progress:
@@ -106,15 +180,27 @@ async def transcribe_file(
             for i in range(total_chunks)
         ]
 
-        # 5. Transcribe each chunk
+        # 5. Transcribe each chunk (with per-chunk fallback)
         chunk_results: list[ChunkResult] = []
+        failed_engines: set[str] = set()
+
         for idx, chunk_path in enumerate(chunks):
             progress = 15.0 + (idx / max(total_chunks, 1)) * 70.0  # 15% to 85%
             if on_progress:
                 on_progress(project.id, progress, f"Transcribing chunk {idx + 1}/{total_chunks}...")
 
-            result = await engine.transcribe_chunk(str(chunk_path), language)
+            result, used_engine = await _transcribe_chunk_with_fallback(
+                chunk_path, language, active_engine_id, engine, failed_engines,
+            )
             chunk_results.append(result)
+
+            # Update engine_used if we switched mid-transcription
+            if used_engine != active_engine_id:
+                active_engine_id = used_engine
+                engine = ENGINES[used_engine]
+                project.engine_used = used_engine
+                if on_progress:
+                    on_progress(project.id, progress, f"Switched to {engine.name}, chunk {idx + 1}/{total_chunks}...")
 
             project.progress = progress
             await db.commit()
@@ -171,7 +257,6 @@ async def transcribe_file(
         logger.info(f"Transcription complete: {project.name} ({len(merged.segments)} segments)")
 
     except Exception as e:
-        import traceback
         error_detail = str(e) or f"{type(e).__name__}: {repr(e)}"
         logger.error(f"Transcription failed for {project.name}: {error_detail}")
         logger.error(traceback.format_exc())
