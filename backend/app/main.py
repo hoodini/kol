@@ -5,6 +5,17 @@ Built by Yuval Avidani — https://yuv.ai
 FastAPI application entry point.
 """
 
+import os
+import sys
+
+# Force UTF-8 on Windows — required for Hebrew text in logging/progress callbacks
+if sys.platform == "win32":
+    os.environ.setdefault("PYTHONUTF8", "1")
+    if sys.stdout.encoding != "utf-8":
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if sys.stderr.encoding != "utf-8":
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import asyncio
 import json
 import logging
@@ -18,7 +29,7 @@ from app.database import engine
 from app.models import Base
 from app.routers import export, projects, settings, studio, transcribe
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, encoding="utf-8")
 logger = logging.getLogger(__name__)
 
 
