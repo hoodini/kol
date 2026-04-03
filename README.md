@@ -13,7 +13,7 @@ Transcribe any audio or video — local files, YouTube, Vimeo, entire playlists 
 [![Made with Next.js](https://img.shields.io/badge/Frontend-Next.js_15-black?logo=next.js)](https://nextjs.org)
 [![Hebrew First](https://img.shields.io/badge/%D7%A2%D7%91%D7%A8%D7%99%D7%AA-First-blue)](#)
 
-[Demo](#screenshots) · [Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture)
+[Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [**מדריך בעברית**](SETUP_GUIDE.md) · [**LLM Setup Prompt**](LLM_SETUP_PROMPT.md)
 
 </div>
 
@@ -252,6 +252,10 @@ erDiagram
 ---
 
 ## Quick Start
+
+> **🇮🇱 לא טכני?** יש [מדריך מפורט בעברית](SETUP_GUIDE.md) שמסביר כל שלב בשפת בני אדם.
+>
+> **🤖 מעדיף שה-AI יעזור?** העתיקו את ה-[LLM Setup Prompt](LLM_SETUP_PROMPT.md) ל-ChatGPT/Claude והוא ידריך אתכם.
 
 ### Prerequisites
 
