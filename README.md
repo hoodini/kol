@@ -280,8 +280,10 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
 # Configure API keys (optional — local Whisper works without any keys)
+# IMPORTANT: .env must stay inside backend/ — the app reads it from here
 cp .env.example .env
-# Edit .env to add your API keys
+# Edit .env to add your API keys (at least one: GROQ_API_KEY or HUGGINGFACE_API_KEY)
+# Note: Groq free tier is limited to 20 requests/min — the app auto-paces and retries
 ```
 
 ### 3. Frontend Setup
