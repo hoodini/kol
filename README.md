@@ -280,7 +280,7 @@ source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
 # Configure API keys (optional — local Whisper works without any keys)
-cp ../.env.example .env
+cp .env.example .env
 # Edit .env to add your API keys
 ```
 
@@ -314,6 +314,8 @@ Open **http://localhost:3000** and start transcribing!
 | HuggingFace | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | `HUGGINGFACE_API_KEY` |
 
 > **Note:** Local Whisper requires no API key — it runs entirely on your machine.
+>
+> **Groq free tier:** Limited to 20 requests/minute. Kol automatically spaces requests to stay under this limit, so longer files may take a bit more time. Rate limit retries are handled transparently.
 
 ---
 
@@ -359,7 +361,8 @@ kol/
 │   │       ├── studio.py        # Correction studio API
 │   │       ├── export.py        # Export endpoints
 │   │       └── settings.py
-│   └── requirements.txt
+│   ├── requirements.txt
+│   └── .env.example              # API key template (copy to .env)
 ├── frontend/
 │   ├── src/
 │   │   ├── app/                 # Next.js pages (RTL)
@@ -367,8 +370,8 @@ kol/
 │   │   ├── stores/              # Zustand state
 │   │   └── lib/                 # API client & utils
 │   └── package.json
-├── .env.example                 # API key template
-└── README.md
+├── README.md
+└── SETUP_GUIDE.md
 ```
 
 ---
