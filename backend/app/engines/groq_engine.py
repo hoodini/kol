@@ -30,8 +30,12 @@ GROQ_MODELS = {
 class GroqEngine:
     """Cloud transcription via Groq's Whisper API."""
 
+    # Groq free tier: 20 RPM. Space requests ~3.5s apart to stay under limit.
+    _REQUEST_INTERVAL = 3.5
+
     def __init__(self, model: str = "whisper-large-v3"):
         self.model = model
+        self._last_request_time: float = 0
 
     @property
     def name(self) -> str:
@@ -58,7 +62,16 @@ class GroqEngine:
         if not audio_file.exists():
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
+        import time
+
         for attempt in range(max_retries):
+            # Proactive rate limiting: wait between requests to stay under RPM limit
+            now = time.monotonic()
+            elapsed = now - self._last_request_time
+            if elapsed < self._REQUEST_INTERVAL:
+                await asyncio.sleep(self._REQUEST_INTERVAL - elapsed)
+            self._last_request_time = time.monotonic()
+
             async with httpx.AsyncClient(timeout=120.0) as client:
                 with open(audio_file, "rb") as f:
                     response = await client.post(
