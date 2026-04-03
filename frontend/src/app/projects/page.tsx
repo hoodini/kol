@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { api, type Project } from "@/lib/api";
 import { cn, formatDuration, formatTime } from "@/lib/utils";
@@ -18,12 +18,41 @@ import {
   Video,
   FileAudio,
   Globe,
+  Timer,
 } from "lucide-react";
+
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `${Math.floor(seconds)} שנ׳`;
+  if (seconds < 3600) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")} דק׳`;
+  }
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${h}:${m.toString().padStart(2, "0")} שע׳`;
+}
+
+function useElapsedTimers(projects: Project[]) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const hasActive = projects.some((p) =>
+      ["processing", "downloading", "pending"].includes(p.status)
+    );
+    if (!hasActive) return;
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [projects]);
+
+  return now;
+}
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const now = useElapsedTimers(projects);
 
   useEffect(() => {
     loadProjects();
@@ -180,15 +209,39 @@ export default function ProjectsPage() {
                       </p>
                     )}
 
-                    {/* Progress bar for in-progress */}
-                    {(project.status === "processing" || project.status === "downloading") && (
-                      <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full transition-all duration-500"
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                    )}
+                    {/* Progress section for in-progress */}
+                    {(project.status === "processing" || project.status === "downloading") && (() => {
+                      const elapsed = (now - new Date(project.created_at).getTime()) / 1000;
+                      const pct = Math.max(project.progress, 0.1);
+                      const estimatedTotal = elapsed / (pct / 100);
+                      const remaining = Math.max(estimatedTotal - elapsed, 0);
+                      return (
+                        <div className="mt-2 space-y-1.5">
+                          <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-l from-primary to-purple-400 rounded-full transition-all duration-500"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground" dir="ltr">
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono font-medium text-primary">
+                                {Math.round(project.progress)}%
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Timer className="w-3 h-3" />
+                                {formatElapsed(elapsed)}
+                              </span>
+                            </div>
+                            {project.progress > 5 && (
+                              <span>
+                                ~{formatElapsed(remaining)} remaining
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Date */}
