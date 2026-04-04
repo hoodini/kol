@@ -1,5 +1,5 @@
 """
-Kol (קול) - SQLAlchemy Models
+Blitz AI - SQLAlchemy Models
 All database models with UUID primary keys and append-only versioning.
 """
 

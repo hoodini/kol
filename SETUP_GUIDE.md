@@ -2,7 +2,7 @@
 
 # מדריך התקנה צעד אחר צעד 🇮🇱
 
-### Kol (קול) — סטודיו תמלול מקצועי
+### Blitz AI — סטודיו תמלול מקצועי
 
 **מדריך לכל אחד — גם אם אף פעם לא פתחת טרמינל**
 
@@ -14,7 +14,7 @@
 
 ## מה זה בכלל?
 
-**קול** הוא כלי שמאפשר לך לתמלל כל קובץ אודיו או וידאו — הוא מקשיב ומוציא טקסט כתוב. אפשר להדביק לינק של סרטון YouTube ולקבל את כל הטקסט שנאמר בו, עם חותמות זמן מדויקות, מוכן לייצוא ככתוביות לכל תוכנת עריכה.
+**Blitz AI** הוא כלי שמאפשר לך לתמלל כל קובץ אודיו או וידאו — הוא מקשיב ומוציא טקסט כתוב. אפשר להדביק לינק של סרטון YouTube ולקבל את כל הטקסט שנאמר בו, עם חותמות זמן מדויקות, מוכן לייצוא ככתוביות לכל תוכנת עריכה.
 
 ### מה צריך לפני שמתחילים?
 
@@ -190,8 +190,8 @@ python3 --version && node --version && ffmpeg -version | head -1 && yt-dlp --ver
 
 ```bash
 cd ~/Desktop
-git clone https://github.com/hoodini/kol.git
-cd kol
+git clone https://github.com/hoodini/blitzai.git
+cd blitzai
 ```
 
 </details>
@@ -201,15 +201,15 @@ cd kol
 
 ```powershell
 cd $HOME\Desktop
-git clone https://github.com/hoodini/kol.git
-cd kol
+git clone https://github.com/hoodini/blitzai.git
+cd blitzai
 ```
 
-> 💡 **אלטרנטיבה:** אם `git` לא עובד, תוכלו פשוט [להוריד כ-ZIP](https://github.com/hoodini/kol/archive/refs/heads/master.zip), לחלץ לשולחן העבודה, ולפתוח את התיקייה.
+> 💡 **אלטרנטיבה:** אם `git` לא עובד, תוכלו פשוט [להוריד כ-ZIP](https://github.com/hoodini/blitzai/archive/refs/heads/master.zip), לחלץ לשולחן העבודה, ולפתוח את התיקייה.
 
 </details>
 
-> **מה קרה?** הורדנו את כל הקוד של קול לתיקייה חדשה על שולחן העבודה.
+> **מה קרה?** הורדנו את כל הקוד של Blitz AI לתיקייה חדשה על שולחן העבודה.
 
 ---
 
@@ -268,7 +268,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-> זה מתקין את כל הספריות שקול צריך. ייקח 1-3 דקות.
+> זה מתקין את כל הספריות ש-Blitz AI צריך. ייקח 1-3 דקות.
 
 ### 3.3 — יצירת קובץ ההגדרות
 
@@ -308,7 +308,7 @@ copy .env.example .env
 
 **ממליצים להתחיל עם Groq** — הכי מהיר, הכי קל, חינמי.
 
-> **💡 שימו לב:** ב-Groq בחשבון חינמי יש מגבלה של 20 בקשות בדקה. קול מטפל בזה אוטומטית — הוא מרווח את הבקשות כדי לא לחרוג מהמגבלה, אז תמלול של קבצים ארוכים עשוי לקחת קצת יותר זמן. אם אתם רואים הודעות על "rate limit" בלוגים — זה נורמלי, קול ינסה שוב אוטומטית.
+> **💡 שימו לב:** ב-Groq בחשבון חינמי יש מגבלה של 20 בקשות בדקה. Blitz AI מטפל בזה אוטומטית — הוא מרווח את הבקשות כדי לא לחרוג מהמגבלה, אז תמלול של קבצים ארוכים עשוי לקחת קצת יותר זמן. אם אתם רואים הודעות על "rate limit" בלוגים — זה נורמלי, Blitz AI ינסה שוב אוטומטית.
 
 ---
 
@@ -328,7 +328,7 @@ copy .env.example .env
 
 4. **צרו מפתח חדש:**
    - לחצו `Create API Key`
-   - תנו שם, למשל `kol-transcription`
+   - תנו שם, למשל `blitzai-transcription`
    - לחצו `Submit`
 
 5. **העתיקו את המפתח!**
@@ -423,7 +423,7 @@ GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxx
 
 4. **צרו Token חדש:**
    - לחצו `Create new token`
-   - שם: `kol-transcription`
+   - שם: `blitzai-transcription`
    - סוג: `Read` (מספיק!)
    - לחצו `Create token`
 
@@ -474,7 +474,7 @@ npm install
 <summary><b>🍎 Mac / 🐧 Linux</b></summary>
 
 ```bash
-cd ~/Desktop/kol/backend
+cd ~/Desktop/blitzai/backend
 source .venv/bin/activate
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
@@ -485,7 +485,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 <summary><b>🪟 Windows (PowerShell)</b></summary>
 
 ```powershell
-cd $HOME\Desktop\kol\backend
+cd $HOME\Desktop\blitzai\backend
 .\.venv\Scripts\Activate.ps1
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
@@ -496,14 +496,14 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 <summary><b>🪟 Windows (CMD)</b></summary>
 
 ```cmd
-cd %USERPROFILE%\Desktop\kol\backend
+cd %USERPROFILE%\Desktop\blitzai\backend
 .venv\Scripts\activate.bat
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 </details>
 
-> ✅ אמור להופיע: `🎙️ Kol (קול) is ready!`
+> ✅ אמור להופיע: `⚡ Blitz AI is ready!`
 
 ### חלון 2 — האתר (Frontend):
 
@@ -511,7 +511,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 <summary><b>🍎 Mac / 🐧 Linux</b></summary>
 
 ```bash
-cd ~/Desktop/kol/frontend
+cd ~/Desktop/blitzai/frontend
 npm run dev
 ```
 
@@ -521,7 +521,7 @@ npm run dev
 <summary><b>🪟 Windows</b></summary>
 
 ```powershell
-cd $HOME\Desktop\kol\frontend
+cd $HOME\Desktop\blitzai\frontend
 npm run dev
 ```
 
@@ -533,7 +533,7 @@ npm run dev
 
 **http://localhost:3000**
 
-🎉 **זהו! קול רץ!**
+🎉 **זהו! Blitz AI רץ!**
 
 ---
 
@@ -572,7 +572,7 @@ npm run dev
 | בעיה | פתרון |
 |------|-------|
 | "הטרמינל לא מזהה את הפקודה" | סגרו את הטרמינל ופתחו חדש. אם לא עוזר — ראו פתרון ספציפי למטה |
-| "השרת לא מתחבר" | בדקו שהטרמינל הראשון (backend) מראה `Kol is ready!` |
+| "השרת לא מתחבר" | בדקו שהטרמינל הראשון (backend) מראה `Blitz AI is ready!` |
 | "המנוע לא זמין" | כנסו להגדרות ובדקו שמפתח ה-API מסומן כ-"מוגדר" |
 | "התמלול לא מדויק" | נסו מנוע אחר. לעברית, ivrit-ai נותן את התוצאות הכי טובות |
 | "Port 8000 already in use" | תהליך ישן עדיין רץ. ראו פתרון למטה |
@@ -689,19 +689,19 @@ sudo kill -9 $(sudo lsof -t -i:8000)
 
 ## הפעלה מחדש (פעם הבאה שתרצו להשתמש)
 
-כל פעם שתרצו להשתמש בקול, צריך להפעיל את שני השרתים:
+כל פעם שתרצו להשתמש ב-Blitz AI, צריך להפעיל את שני השרתים:
 
 <details>
 <summary><b>🍎 Mac / 🐧 Linux</b></summary>
 
 **טרמינל 1:**
 ```bash
-cd ~/Desktop/kol/backend && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+cd ~/Desktop/blitzai/backend && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 **טרמינל 2:**
 ```bash
-cd ~/Desktop/kol/frontend && npm run dev
+cd ~/Desktop/blitzai/frontend && npm run dev
 ```
 
 </details>
@@ -711,12 +711,12 @@ cd ~/Desktop/kol/frontend && npm run dev
 
 **PowerShell 1:**
 ```powershell
-cd $HOME\Desktop\kol\backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+cd $HOME\Desktop\blitzai\backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 **PowerShell 2:**
 ```powershell
-cd $HOME\Desktop\kol\frontend; npm run dev
+cd $HOME\Desktop\blitzai\frontend; npm run dev
 ```
 
 </details>

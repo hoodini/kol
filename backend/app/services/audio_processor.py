@@ -1,5 +1,5 @@
 """
-Kol (קול) - Audio Processor
+Blitz AI - Audio Processor
 Handles all ffmpeg operations: probe, convert, chunk.
 """
 

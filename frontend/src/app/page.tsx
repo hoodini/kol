@@ -49,13 +49,20 @@ export default function HomePage() {
   return (
     <div className="space-y-12 animate-fade-in">
       {/* Hero */}
-      <div className="text-center space-y-4 py-8">
+      <div className="text-center space-y-6 py-8">
         <div className="inline-flex items-center gap-2 bg-secondary px-4 py-2 rounded-full text-sm text-primary font-medium">
           <Sparkles className="w-4 h-4" />
           סטודיו תמלול מקצועי
         </div>
+        <div className="mx-auto max-w-md">
+          <img
+            src="/hero.png"
+            alt="Blitz AI"
+            className="w-full h-auto rounded-2xl shadow-lg shadow-primary/10"
+          />
+        </div>
         <h1 className="text-5xl font-bold">
-          קול <span className="text-primary">Kol</span>
+          ⚡ <span className="text-primary">Blitz AI</span>
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           תמלול מדויק לכל אורך, בכל שפה, עם דגש על עברית.
@@ -114,7 +121,7 @@ export default function HomePage() {
 
       {/* Features Grid */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">למה קול?</h2>
+        <h2 className="text-2xl font-bold mb-6">למה Blitz AI?</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map((feature) => {
             const Icon = feature.icon;

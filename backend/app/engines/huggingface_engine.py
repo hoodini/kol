@@ -1,5 +1,5 @@
 """
-Kol (קול) - HuggingFace Engine (ivrit-ai)
+Blitz AI - HuggingFace Engine (ivrit-ai)
 Uses ivrit-ai models for best-in-class Hebrew ASR.
 Based on 22,000+ hours of Hebrew audio data.
 """

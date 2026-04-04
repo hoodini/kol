@@ -10,7 +10,7 @@ const heebo = Heebo({
 });
 
 export const metadata: Metadata = {
-  title: "Kol (קול) — סטודיו תמלול מקצועי",
+  title: "Blitz AI — סטודיו תמלול מקצועי",
   description:
     "תמלול אודיו ווידאו מקצועי עם תמיכה מובנית בעברית. Whisper, Groq, Gemini, ivrit-ai.",
   authors: [{ name: "Yuval Avidani", url: "https://yuv.ai" }],

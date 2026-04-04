@@ -1,5 +1,5 @@
 /**
- * Kol (קול) - Internationalization
+ * Blitz AI - Internationalization
  * Hebrew (he) and English (en) translations.
  */
 
@@ -8,7 +8,7 @@ export type Lang = "he" | "en";
 const translations = {
   // Sidebar navigation
   "nav.home": { he: "דף הבית", en: "Home" },
-  "nav.transcribe": { he: "תמלול חדש", en: "New Transcription" },
+  "nav.transcribe": { he: "פרויקט חדש", en: "New Project" },
   "nav.projects": { he: "פרויקטים", en: "Projects" },
   "nav.url": { he: "מ-YouTube / URL", en: "From YouTube / URL" },
   "nav.settings": { he: "הגדרות", en: "Settings" },
@@ -84,8 +84,8 @@ const translations = {
   "home.myProjects": { he: "הפרויקטים שלי", en: "My Projects" },
 
   // Transcribe page
-  "transcribe.title": { he: "תמלול חדש", en: "New Transcription" },
-  "transcribe.subtitle": { he: "העלה קובץ אודיו או וידאו לתמלול", en: "Upload an audio or video file to transcribe" },
+  "transcribe.title": { he: "פרויקט חדש", en: "New Project" },
+  "transcribe.subtitle": { he: "העלה קבצים, בחר תיקייה, או הדבק קישור לתמלול", en: "Upload files, select a folder, or paste a link to transcribe" },
   "transcribe.dragDrop": { he: "גרור קבצים לכאן או לחץ לבחירה", en: "Drag files here or click to select" },
   "transcribe.start": { he: "התחל תמלול", en: "Start Transcription" },
 

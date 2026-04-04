@@ -1,5 +1,5 @@
 """
-Kol (קול) - Groq Whisper Engine
+Blitz AI - Groq Whisper Engine
 Ultra-fast cloud transcription at $0.04-0.111/hour.
 299x real-time speed with Whisper Large V3.
 """

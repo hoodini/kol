@@ -1,5 +1,5 @@
 """
-Kol (קול) - Transcription Router
+Blitz AI - Transcription Router
 Handles file uploads, URL downloads, and folder scanning.
 """
 

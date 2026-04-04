@@ -1,5 +1,5 @@
 """
-Kol (קול) - Configuration
+Blitz AI - Configuration
 Central configuration using pydantic-settings for type-safe env var loading.
 """
 

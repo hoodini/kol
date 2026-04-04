@@ -1,5 +1,5 @@
 """
-Kol (קול) - Projects Router
+Blitz AI - Projects Router
 CRUD operations for transcription projects.
 """
 

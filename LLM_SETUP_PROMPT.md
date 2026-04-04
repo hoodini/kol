@@ -8,11 +8,11 @@
 ## COPY FROM HERE:
 
 ```
-I want to install and run the "Kol" (קול) transcription tool on my computer.
+I want to install and run the "Blitz AI" transcription tool on my computer.
 
-Here's what Kol is: An open-source transcription studio that can transcribe any audio/video file or YouTube link into text with accurate timestamps. It supports Hebrew and other languages, has a beautiful pink/white UI, and can export subtitles as SRT/VTT/ASS/TXT/JSON.
+Here's what Blitz AI is: An open-source transcription studio that can transcribe any audio/video file or YouTube link into text with accurate timestamps. It supports Hebrew and other languages, has a beautiful pink/white UI, and can export subtitles as SRT/VTT/ASS/TXT/JSON.
 
-GitHub repo: https://github.com/hoodini/kol
+GitHub repo: https://github.com/hoodini/blitzai
 
 My setup:
 - Operating system: [Mac / Windows / Linux]
@@ -44,7 +44,7 @@ Important notes:
 ## Alternative: Quick Setup Prompt (for experienced users)
 
 ```
-Help me set up https://github.com/hoodini/kol — it's a FastAPI + Next.js transcription tool.
+Help me set up https://github.com/hoodini/blitzai — it's a FastAPI + Next.js transcription tool.
 I'm on Mac with Python 3.13 and Node 24.
 I want to use Groq Whisper for transcription.
 Give me all commands to run in order — clone, setup backend venv, install deps, create .env with Groq key, setup frontend, and run both servers.
@@ -55,7 +55,7 @@ Give me all commands to run in order — clone, setup backend venv, install deps
 ## Alternative: Troubleshooting Prompt
 
 ```
-I'm trying to run https://github.com/hoodini/kol and getting this error:
+I'm trying to run https://github.com/hoodini/blitzai and getting this error:
 
 [PASTE YOUR ERROR HERE]
 
@@ -75,7 +75,7 @@ Help me fix this step by step.
 ## Alternative: YouTube Transcription Prompt
 
 ```
-I have Kol (https://github.com/hoodini/kol) running on localhost:3000.
+I have Blitz AI (https://github.com/hoodini/blitzai) running on localhost:3000.
 How do I transcribe this YouTube video: [PASTE YOUTUBE URL]?
 Which engine should I use for Hebrew content?
 Walk me through using the URL page, checking the video info, starting transcription, and exporting the result as SRT subtitles.

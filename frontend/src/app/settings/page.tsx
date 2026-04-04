@@ -108,7 +108,7 @@ export default function SettingsPage() {
       {/* Credits */}
       <div className="rounded-2xl border border-border bg-gradient-to-bl from-secondary to-accent p-6 text-center space-y-3">
         <h2 className="text-xl font-bold">
-          קול <span className="text-primary">Kol</span> v1.0
+          ⚡ <span className="text-primary">Blitz AI</span> v1.0
         </h2>
         <p className="text-sm text-muted-foreground">סטודיו תמלול מקצועי</p>
         <div className="text-sm">

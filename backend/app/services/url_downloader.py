@@ -1,5 +1,5 @@
 """
-Kol (קול) - URL Downloader Service
+Blitz AI - URL Downloader Service
 Downloads audio from YouTube, Vimeo, and 1000+ other sites via yt-dlp.
 Supports single videos and full playlists.
 """

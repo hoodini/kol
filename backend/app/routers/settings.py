@@ -1,5 +1,5 @@
 """
-Kol (קול) - Settings Router
+Blitz AI - Settings Router
 User preferences and API key management.
 """
 

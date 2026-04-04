@@ -54,7 +54,7 @@ export function Sidebar() {
               <Mic className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-bold text-lg">
-              קול <span className="text-primary">Kol</span>
+              ⚡ <span className="text-primary">Blitz AI</span>
             </span>
           </Link>
         )}

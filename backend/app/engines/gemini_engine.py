@@ -1,5 +1,5 @@
 """
-Kol (קול) - Google Gemini Engine
+Blitz AI - Google Gemini Engine
 Uses Gemini 2.0 Flash for audio transcription.
 Good for multilingual content and speaker diarization.
 """

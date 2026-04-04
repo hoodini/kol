@@ -1,12 +1,16 @@
 """
-Kol (קול) - Studio Router
-Correction studio API: read segments, save edits, stream audio.
+Blitz AI - Studio Router
+Correction studio API: read segments, save edits, stream audio, speaker diarization.
 """
 
+import asyncio
+import logging
 from pathlib import Path
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -14,6 +18,8 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Project, Segment, TranscriptVersion, Word
 from app.schemas import SaveStudioRequest, SegmentResponse, StudioResponse, WordResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/studio", tags=["studio"])
 
@@ -210,3 +216,253 @@ async def list_versions(project_id: str, db: AsyncSession = Depends(get_db)):
         }
         for v in versions
     ]
+
+
+# ─── Speaker Diarization ────────────────────────────
+
+
+class DiarizeRequest(BaseModel):
+    num_speakers: Optional[int] = None
+
+
+class RenameSpeakerRequest(BaseModel):
+    old_name: str
+    new_name: str
+
+
+@router.post("/{project_id}/diarize")
+async def diarize_project(
+    project_id: str,
+    request: DiarizeRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Run speaker diarization on the project's audio.
+    Assigns speaker labels to segments and saves as a new version.
+    """
+    from app.config import settings as app_settings
+    from app.services.diarization_service import run_diarization
+
+    # Get project
+    result = await db.execute(
+        select(Project).options(selectinload(Project.versions)).where(Project.id == project_id)
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if not project.versions:
+        raise HTTPException(status_code=404, detail="No transcript versions found")
+
+    # Find the audio WAV file
+    audio_path = None
+    if project.source_path:
+        src = Path(project.source_path)
+        wav_candidate = app_settings.processed_dir / f"{src.stem}.wav"
+        if wav_candidate.exists():
+            audio_path = str(wav_candidate)
+        elif src.exists() and src.suffix.lower() == ".wav":
+            audio_path = str(src)
+
+    if not audio_path:
+        raise HTTPException(status_code=404, detail="WAV audio file not found for diarization")
+
+    # Get latest version segments
+    latest_version = max(project.versions, key=lambda v: v.version_number)
+    seg_result = await db.execute(
+        select(Segment)
+        .options(selectinload(Segment.words))
+        .where(Segment.version_id == latest_version.id)
+        .order_by(Segment.index_num)
+    )
+    db_segments = seg_result.scalars().all()
+
+    # Prepare segment dicts for diarization
+    segment_dicts = [
+        {
+            "id": seg.id,
+            "index_num": seg.index_num,
+            "start_time": seg.start_time,
+            "end_time": seg.end_time,
+            "text": seg.text,
+            "confidence": seg.confidence,
+        }
+        for seg in db_segments
+    ]
+
+    # Get HuggingFace token from settings
+    hf_token = app_settings.huggingface_api_key
+
+    # Run diarization in a thread to avoid blocking the event loop
+    updated_segments, speakers = await asyncio.to_thread(
+        run_diarization,
+        audio_path,
+        segment_dicts,
+        hf_token,
+        request.num_speakers,
+    )
+
+    # Save as a new version with speaker labels
+    max_version = max((v.version_number for v in project.versions), default=0)
+    new_version = TranscriptVersion(
+        project_id=project_id,
+        version_number=max_version + 1,
+    )
+    db.add(new_version)
+    await db.flush()
+
+    # Create segments with speaker labels, preserving words
+    for updated_seg in updated_segments:
+        # Find original db segment to copy words from
+        orig_db_seg = next((s for s in db_segments if s.id == updated_seg["id"]), None)
+
+        new_seg = Segment(
+            version_id=new_version.id,
+            index_num=updated_seg["index_num"],
+            start_time=updated_seg["start_time"],
+            end_time=updated_seg["end_time"],
+            text=updated_seg["text"],
+            speaker=updated_seg.get("speaker"),
+            confidence=updated_seg.get("confidence"),
+        )
+        db.add(new_seg)
+        await db.flush()
+
+        # Copy words from original segment
+        if orig_db_seg and orig_db_seg.words:
+            for w in orig_db_seg.words:
+                new_word = Word(
+                    segment_id=new_seg.id,
+                    word=w.word,
+                    start_time=w.start_time,
+                    end_time=w.end_time,
+                    confidence=w.confidence,
+                )
+                db.add(new_word)
+
+    await db.commit()
+
+    logger.info(f"Diarization complete for project {project_id}: {len(speakers)} speakers, version {new_version.version_number}")
+
+    return {
+        "status": "completed",
+        "version_number": new_version.version_number,
+        "speakers": speakers,
+        "segment_count": len(updated_segments),
+    }
+
+
+@router.post("/{project_id}/rename-speaker")
+async def rename_speaker(
+    project_id: str,
+    request: RenameSpeakerRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Rename a speaker across all segments in the latest version.
+    Creates a new version with the updated speaker names.
+    """
+    # Get project
+    result = await db.execute(
+        select(Project).options(selectinload(Project.versions)).where(Project.id == project_id)
+    )
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if not project.versions:
+        raise HTTPException(status_code=404, detail="No transcript versions found")
+
+    # Get latest version segments
+    latest_version = max(project.versions, key=lambda v: v.version_number)
+    seg_result = await db.execute(
+        select(Segment)
+        .options(selectinload(Segment.words))
+        .where(Segment.version_id == latest_version.id)
+        .order_by(Segment.index_num)
+    )
+    db_segments = seg_result.scalars().all()
+
+    # Check if old_name exists in any segment
+    has_speaker = any(seg.speaker == request.old_name for seg in db_segments)
+    if not has_speaker:
+        raise HTTPException(status_code=404, detail=f"Speaker '{request.old_name}' not found")
+
+    # Create new version with renamed speaker
+    max_version = max((v.version_number for v in project.versions), default=0)
+    new_version = TranscriptVersion(
+        project_id=project_id,
+        version_number=max_version + 1,
+    )
+    db.add(new_version)
+    await db.flush()
+
+    for seg in db_segments:
+        new_speaker = request.new_name if seg.speaker == request.old_name else seg.speaker
+        new_seg = Segment(
+            version_id=new_version.id,
+            index_num=seg.index_num,
+            start_time=seg.start_time,
+            end_time=seg.end_time,
+            text=seg.text,
+            speaker=new_speaker,
+            confidence=seg.confidence,
+        )
+        db.add(new_seg)
+        await db.flush()
+
+        # Copy words
+        if seg.words:
+            for w in seg.words:
+                new_word = Word(
+                    segment_id=new_seg.id,
+                    word=w.word,
+                    start_time=w.start_time,
+                    end_time=w.end_time,
+                    confidence=w.confidence,
+                )
+                db.add(new_word)
+
+    await db.commit()
+
+    # Collect updated speaker list
+    all_speakers = sorted(set(
+        request.new_name if seg.speaker == request.old_name else seg.speaker
+        for seg in db_segments
+        if seg.speaker
+    ))
+
+    return {
+        "status": "renamed",
+        "version_number": new_version.version_number,
+        "speakers": all_speakers,
+    }
+
+
+@router.get("/{project_id}/speakers")
+async def get_speakers(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the list of unique speakers in the latest version."""
+    result = await db.execute(
+        select(Project).options(selectinload(Project.versions)).where(Project.id == project_id)
+    )
+    project = result.scalar_one_or_none()
+    if not project or not project.versions:
+        return {"speakers": [], "has_diarization": False}
+
+    latest_version = max(project.versions, key=lambda v: v.version_number)
+    seg_result = await db.execute(
+        select(Segment.speaker)
+        .where(Segment.version_id == latest_version.id)
+        .where(Segment.speaker.isnot(None))
+        .where(Segment.speaker != "")
+        .distinct()
+    )
+    speakers = sorted([row[0] for row in seg_result.all()])
+
+    return {
+        "speakers": speakers,
+        "has_diarization": len(speakers) > 0,
+    }

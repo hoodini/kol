@@ -1,5 +1,5 @@
 """
-Kol (קול) - Database Setup
+Blitz AI - Database Setup
 SQLite with WAL mode for concurrent read/write performance.
 """
 

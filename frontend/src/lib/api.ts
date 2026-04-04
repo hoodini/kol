@@ -1,5 +1,5 @@
 /**
- * Kol (קול) - API Client
+ * Blitz AI - API Client
  * Centralized API communication with the FastAPI backend.
  */
 

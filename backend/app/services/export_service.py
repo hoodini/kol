@@ -1,5 +1,5 @@
 """
-Kol (קול) - Export Service
+Blitz AI - Export Service
 Generates SRT, VTT, ASS, TXT, and JSON from transcript segments.
 All formats support RTL Hebrew text.
 """
@@ -38,13 +38,20 @@ def format_ass_time(seconds: float) -> str:
     return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
 
 
+def _speaker_prefix(seg: Segment) -> str:
+    """Return speaker prefix if available, e.g. '[דובר 1] '."""
+    if seg.speaker:
+        return f"[{seg.speaker}] "
+    return ""
+
+
 def export_srt(segments: list[Segment]) -> str:
     """Export to SubRip (SRT) format — the most universal subtitle format."""
     lines = []
     for i, seg in enumerate(segments, 1):
         lines.append(str(i))
         lines.append(f"{format_srt_time(seg.start_time)} --> {format_srt_time(seg.end_time)}")
-        lines.append(seg.text)
+        lines.append(f"{_speaker_prefix(seg)}{seg.text}")
         lines.append("")  # Empty line separator
     return "\n".join(lines)
 
@@ -55,12 +62,12 @@ def export_vtt(segments: list[Segment]) -> str:
     for i, seg in enumerate(segments, 1):
         lines.append(str(i))
         lines.append(f"{format_vtt_time(seg.start_time)} --> {format_vtt_time(seg.end_time)}")
-        lines.append(seg.text)
+        lines.append(f"{_speaker_prefix(seg)}{seg.text}")
         lines.append("")
     return "\n".join(lines)
 
 
-def export_ass(segments: list[Segment], title: str = "Kol Transcription") -> str:
+def export_ass(segments: list[Segment], title: str = "Blitz AI Transcription") -> str:
     """
     Export to Advanced SubStation Alpha (ASS) format.
     Includes RTL direction override for Hebrew text.
@@ -88,19 +95,24 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     for seg in segments:
         start = format_ass_time(seg.start_time)
         end = format_ass_time(seg.end_time)
-        # Use Unicode RTL override for Hebrew
-        text = f"{{\\an2}}\\N{seg.text}"
-        lines.append(f"Dialogue: 0,{start},{end},Hebrew,,0,0,0,,{text}")
+        # Use Unicode RTL override for Hebrew, include speaker in Name field
+        speaker_name = seg.speaker or ""
+        text = f"{{\\an2}}\\N{_speaker_prefix(seg)}{seg.text}"
+        lines.append(f"Dialogue: 0,{start},{end},Hebrew,{speaker_name},0,0,0,,{text}")
 
     return "\n".join(lines)
 
 
 def export_txt(segments: list[Segment]) -> str:
-    """Export to plain text — clean text only, no timestamps."""
+    """Export to plain text with speaker labels when available."""
     lines = []
+    current_speaker = None
     for seg in segments:
+        if seg.speaker and seg.speaker != current_speaker:
+            current_speaker = seg.speaker
+            lines.append(f"\n{current_speaker}:")
         lines.append(seg.text)
-    return "\n".join(lines)
+    return "\n".join(lines).strip()
 
 
 def export_json(segments: list[Segment]) -> str:

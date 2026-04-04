@@ -1,5 +1,5 @@
 """
-Kol (קול) - Faster Whisper Engine (Local)
+Blitz AI - Faster Whisper Engine (Local)
 Uses CTranslate2 for optimized inference on CPU/GPU.
 Best option for privacy and no API costs.
 """

@@ -1,5 +1,5 @@
 """
-Kol (קול) - Transcription Engine Protocol
+Blitz AI - Transcription Engine Protocol
 All engines implement this contract: receive a chunk, return segments + words.
 """
 

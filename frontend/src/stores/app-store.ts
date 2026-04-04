@@ -1,5 +1,5 @@
 /**
- * Kol (קול) - Global App Store
+ * Blitz AI - Global App Store
  * Manages sidebar state, theme, language, and global UI state.
  */
 

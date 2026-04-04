@@ -1,6 +1,8 @@
 <div align="center">
 
-# <img src="https://img.icons8.com/color/48/microphone.png" width="32"/> קול — Kol
+# ⚡ Blitz AI
+
+<img src="frontend/public/hero.png" width="500" alt="Blitz AI" />
 
 ### Professional Transcription Studio
 
@@ -19,13 +21,13 @@ Transcribe any audio or video — local files, YouTube, Vimeo, entire playlists 
 
 ---
 
-## Why Kol?
+## Why Blitz AI?
 
-Most transcription tools treat Hebrew as an afterthought. **Kol was built Hebrew-first** — RTL layout, Hebrew-optimized models, and a correction studio designed for right-to-left editing. But it works beautifully with any language.
+Most transcription tools treat Hebrew as an afterthought. **Blitz AI was built Hebrew-first** — RTL layout, Hebrew-optimized models, and a correction studio designed for right-to-left editing. But it works beautifully with any language.
 
-### What makes Kol different:
+### What makes Blitz AI different:
 
-| Feature | Kol | Otter.ai | Descript | MacWhisper |
+| Feature | Blitz AI | Otter.ai | Descript | MacWhisper |
 |---------|-----|----------|---------|------------|
 | Hebrew-first RTL UI | **Yes** | No | Partial | No |
 | Local (free) transcription | **Yes** | No | No | Yes |
@@ -55,8 +57,8 @@ Most transcription tools treat Hebrew as an afterthought. **Kol was built Hebrew
 
 - **File upload** — Drag & drop any audio/video format (mp3, wav, mp4, mkv, mov, flac, ogg, webm...)
 - **Multi-file upload** — Select dozens of files at once
-- **Folder scan** — Point to a folder path, Kol finds all media files recursively
-- **YouTube** — Paste a video URL, Kol downloads video + audio automatically
+- **Folder scan** — Point to a folder path, Blitz AI finds all media files recursively
+- **YouTube** — Paste a video URL, Blitz AI downloads video + audio automatically
 - **Vimeo** — Same magic, different platform
 - **Playlists** — Paste a YouTube playlist URL, transcribe an entire course
 - **1000+ sites** — Powered by yt-dlp, supports Dailymotion, Facebook, TikTok, Twitch...
@@ -267,8 +269,8 @@ erDiagram
 ### 1. Clone
 
 ```bash
-git clone https://github.com/hoodini/kol.git
-cd kol
+git clone https://github.com/hoodini/blitzai.git
+cd blitzai
 ```
 
 ### 2. Backend Setup
@@ -317,7 +319,7 @@ Open **http://localhost:3000** and start transcribing!
 
 > **Note:** Local Whisper requires no API key — it runs entirely on your machine.
 >
-> **Groq free tier:** Limited to 20 requests/minute. Kol automatically spaces requests to stay under this limit, so longer files may take a bit more time. Rate limit retries are handled transparently.
+> **Groq free tier:** Limited to 20 requests/minute. Blitz AI automatically spaces requests to stay under this limit, so longer files may take a bit more time. Rate limit retries are handled transparently.
 
 ---
 
@@ -337,7 +339,7 @@ Open **http://localhost:3000** and start transcribing!
 ## Project Structure
 
 ```
-kol/
+blitzai/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py              # FastAPI app + WebSocket

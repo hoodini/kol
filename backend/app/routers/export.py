@@ -1,5 +1,5 @@
 """
-Kol (קול) - Export Router
+Blitz AI - Export Router
 Export transcripts in various formats.
 """
 

@@ -1,5 +1,5 @@
 """
-Kol (קול) - Professional Transcription Studio
+Blitz AI - Professional Transcription Studio
 Built by Yuval Avidani — https://yuv.ai
 
 FastAPI application entry point.
@@ -38,12 +38,12 @@ async def lifespan(app: FastAPI):
     """Create database tables on startup."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    logger.info("🎙️  Kol (קול) is ready!")
+    logger.info("⚡  Blitz AI is ready!")
     yield
 
 
 app = FastAPI(
-    title="Kol (קול) - Transcription Studio",
+    title="Blitz AI - Transcription Studio",
     description="Professional audio/video transcription with Hebrew-first support",
     version="1.0.0",
     lifespan=lifespan,
@@ -131,7 +131,7 @@ async def websocket_endpoint(websocket: WebSocket, project_id: str):
 @app.get("/")
 async def root():
     return {
-        "name": "Kol (קול)",
+        "name": "Blitz AI",
         "version": "1.0.0",
         "description": "Professional Transcription Studio",
         "author": "Yuval Avidani",

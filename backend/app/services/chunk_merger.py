@@ -1,5 +1,5 @@
 """
-Kol (קול) - Chunk Merger
+Blitz AI - Chunk Merger
 Merges transcription results from overlapping chunks into a seamless transcript.
 """
 

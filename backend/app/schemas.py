@@ -1,5 +1,5 @@
 """
-Kol (קול) - Pydantic Schemas
+Blitz AI - Pydantic Schemas
 Request/response models for the API.
 """
 

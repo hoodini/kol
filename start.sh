@@ -1,8 +1,8 @@
 #!/bin/bash
-# Kol (קול) - Start Script
+# Blitz AI - Start Script
 # Launches both backend and frontend servers
 
-echo "🎙️  Starting Kol (קול) - Transcription Studio"
+echo "⚡  Starting Blitz AI - Transcription Studio"
 echo "   Built by Yuval Avidani — https://yuv.ai"
 echo ""
 
@@ -36,7 +36,7 @@ echo "   Frontend PID: $FRONTEND_PID"
 
 echo ""
 echo -e "${PINK}═══════════════════════════════════════${NC}"
-echo -e "${PINK}  Kol is running!${NC}"
+echo -e "${PINK}  Blitz AI is running!${NC}"
 echo -e "${PINK}  Frontend: http://localhost:3000${NC}"
 echo -e "${PINK}  Backend:  http://localhost:8000${NC}"
 echo -e "${PINK}  API Docs: http://localhost:8000/docs${NC}"

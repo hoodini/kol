@@ -1,5 +1,5 @@
 """
-Kol (קול) - Transcription Manager
+Blitz AI - Transcription Manager
 Orchestrates the full pipeline: upload → convert → chunk → transcribe → merge → store.
 Engine fallback: if the selected engine fails, automatically tries the next available engine.
 """

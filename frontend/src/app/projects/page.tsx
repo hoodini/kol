@@ -23,6 +23,7 @@ import {
   Timer,
   Check,
   X,
+  Plus,
 } from "lucide-react";
 
 function formatElapsed(seconds: number, lang: "he" | "en"): string {
@@ -169,6 +170,13 @@ export default function ProjectsPage() {
             {projects.length} {t("projects.count", language)}
           </p>
         </div>
+        <Link
+          href="/transcribe"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+        >
+          <Plus className="w-4 h-4" />
+          {t("nav.transcribe", language)}
+        </Link>
       </div>
 
       {/* Search */}
