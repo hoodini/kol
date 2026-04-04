@@ -94,6 +94,17 @@ const translations = {
   "url.subtitle": { he: "הזן כתובת URL של סרטון לתמלול", en: "Enter a video URL to transcribe" },
   "url.placeholder": { he: "הדבק כתובת URL...", en: "Paste URL..." },
   "url.start": { he: "התחל תמלול", en: "Start Transcription" },
+
+  // Speaker Diarization
+  "diarize.button": { he: "זיהוי דוברים", en: "Identify Speakers" },
+  "diarize.running": { he: "מזהה דוברים...", en: "Identifying speakers..." },
+  "diarize.complete": { he: "זיהוי דוברים הושלם", en: "Speaker identification complete" },
+  "diarize.error": { he: "שגיאה בזיהוי דוברים", en: "Speaker identification error" },
+  "diarize.speakers": { he: "דוברים", en: "speakers" },
+  "diarize.renameSpeaker": { he: "שנה שם דובר", en: "Rename speaker" },
+  "diarize.speakerName": { he: "שם הדובר", en: "Speaker name" },
+  "diarize.numSpeakers": { he: "מספר דוברים (אופציונלי)", en: "Number of speakers (optional)" },
+  "diarize.numSpeakersHint": { he: "השאר ריק לזיהוי אוטומטי", en: "Leave empty for auto-detection" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
