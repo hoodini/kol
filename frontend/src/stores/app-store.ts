@@ -1,9 +1,10 @@
 /**
  * Kol (קול) - Global App Store
- * Manages sidebar state, theme, and global UI state.
+ * Manages sidebar state, theme, language, and global UI state.
  */
 
 import { create } from "zustand";
+import type { Lang } from "@/lib/i18n";
 
 interface AppState {
   sidebarOpen: boolean;
@@ -11,8 +12,9 @@ interface AppState {
   setSidebarOpen: (open: boolean) => void;
   darkMode: boolean;
   toggleDarkMode: () => void;
-  language: string;
-  setLanguage: (lang: string) => void;
+  language: Lang;
+  setLanguage: (lang: Lang) => void;
+  initFromStorage: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -25,9 +27,30 @@ export const useAppStore = create<AppState>((set) => ({
       const next = !s.darkMode;
       if (typeof document !== "undefined") {
         document.documentElement.classList.toggle("dark", next);
+        localStorage.setItem("kol-dark-mode", JSON.stringify(next));
       }
       return { darkMode: next };
     }),
   language: "he",
-  setLanguage: (lang) => set({ language: lang }),
+  setLanguage: (lang) => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
+      localStorage.setItem("kol-language", lang);
+    }
+    set({ language: lang });
+  },
+  initFromStorage: () => {
+    if (typeof window === "undefined") return;
+    const savedDark = localStorage.getItem("kol-dark-mode");
+    const savedLang = localStorage.getItem("kol-language") as Lang | null;
+    const darkMode = savedDark === "true";
+    const language = savedLang === "en" ? "en" : "he";
+
+    document.documentElement.classList.toggle("dark", darkMode);
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === "he" ? "rtl" : "ltr";
+
+    set({ darkMode, language });
+  },
 }));

@@ -35,6 +35,9 @@ export const api = {
 
   deleteProject: (id: string) => request(`/api/projects/${id}`, { method: "DELETE" }),
 
+  updateProject: (id: string, data: { name?: string; tags?: string[] }) =>
+    request(`/api/projects/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+
   // Transcription
   getEngines: () => request<Engine[]>("/api/transcribe/engines"),
 

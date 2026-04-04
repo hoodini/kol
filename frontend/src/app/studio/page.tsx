@@ -4,6 +4,8 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api, type Segment, type StudioData } from "@/lib/api";
 import { cn, formatTime } from "@/lib/utils";
+import { t } from "@/lib/i18n";
+import { useAppStore } from "@/stores/app-store";
 import {
   Play,
   Pause,
@@ -17,6 +19,9 @@ import {
   History,
   CheckCircle2,
   ArrowUp,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 
 export default function StudioPage() {
@@ -43,9 +48,13 @@ function StudioContent() {
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const segmentRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const { language } = useAppStore();
 
   // Show "back to top" button on scroll
   useEffect(() => {
@@ -58,6 +67,27 @@ function StudioContent() {
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const startRename = () => {
+    if (!data) return;
+    setRenameValue(data.project.name);
+    setIsRenaming(true);
+    setTimeout(() => {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    }, 50);
+  };
+
+  const confirmRename = async () => {
+    if (!projectId || !renameValue.trim()) return;
+    try {
+      await api.updateProject(projectId, { name: renameValue.trim() });
+      setData((prev) => prev ? { ...prev, project: { ...prev.project, name: renameValue.trim() } } : prev);
+    } catch (err: any) {
+      console.error("Rename failed:", err);
+    }
+    setIsRenaming(false);
   };
 
   useEffect(() => {
@@ -169,7 +199,7 @@ function StudioContent() {
       setEditedSegments(new Set());
       setTimeout(() => setSaved(false), 2000);
     } catch (err: any) {
-      alert(`שגיאה בשמירה: ${err.message}`);
+      alert(`${t("studio.saveError", language)}: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -186,7 +216,7 @@ function StudioContent() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert(`שגיאה בייצוא: ${err.message}`);
+      alert(`${t("studio.exportError", language)}: ${err.message}`);
     }
     setShowExport(false);
   };
@@ -215,7 +245,7 @@ function StudioContent() {
   if (!data) {
     return (
       <div className="text-center py-20">
-        <p className="text-lg text-muted-foreground">פרויקט לא נמצא</p>
+        <p className="text-lg text-muted-foreground">{t("studio.notFound", language)}</p>
       </div>
     );
   }
@@ -234,9 +264,50 @@ function StudioContent() {
         {/* Header - save/export bar */}
         <div className="px-6 pt-6 pb-3 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{data.project.name}</h1>
+            <div className="flex items-center gap-2">
+              {isRenaming ? (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); confirmRename(); }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    ref={renameInputRef}
+                    type="text"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Escape") setIsRenaming(false); }}
+                    className="text-2xl font-bold px-2 py-0.5 rounded-lg border border-primary/50 bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    type="submit"
+                    className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-200 transition-colors"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsRenaming(false)}
+                    className="p-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </form>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold">{data.project.name}</h1>
+                  <button
+                    onClick={startRename}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+                    style={{ opacity: 1 }}
+                    title={t("projects.rename", language)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
-              גרסה {data.version_number} מתוך {data.total_versions} • {segments.length} סגמנטים
+              {t("studio.version", language)} {data.version_number} {t("studio.of", language)} {data.total_versions} • {segments.length} {t("studio.segments", language)}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -260,7 +331,7 @@ function StudioContent() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {saved ? "נשמר!" : "שמור"}
+              {saved ? t("studio.saved", language) : t("studio.save", language)}
             </button>
 
             {/* Export dropdown */}
@@ -270,7 +341,7 @@ function StudioContent() {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
               >
                 <Download className="w-4 h-4" />
-                ייצוא
+                {t("studio.export", language)}
                 <ChevronDown className="w-3 h-3" />
               </button>
               {showExport && (
@@ -284,7 +355,7 @@ function StudioContent() {
                       {fmt === "srt" && "SubRip (.srt)"}
                       {fmt === "vtt" && "WebVTT (.vtt)"}
                       {fmt === "ass" && "Advanced SSA (.ass)"}
-                      {fmt === "txt" && "טקסט (.txt)"}
+                      {fmt === "txt" && (language === "he" ? "טקסט (.txt)" : "Text (.txt)")}
                       {fmt === "json" && "JSON (.json)"}
                     </button>
                   ))}
@@ -345,7 +416,7 @@ function StudioContent() {
 
                 <div className="flex items-center gap-3">
                   {data.project.has_video && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">🎬 וידאו</span>
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">🎬 {t("studio.video", language)}</span>
                   )}
                   <span className="text-sm text-muted-foreground font-mono" dir="ltr">
                     {formatTime(currentTime)} / {formatTime(duration)}
@@ -437,7 +508,7 @@ function StudioContent() {
           "fixed bottom-20 left-4 w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:opacity-90 hover:scale-110 z-50",
           showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
-        title="חזרה למעלה"
+        title={t("studio.backToTop", language)}
       >
         <ArrowUp className="w-5 h-5" />
       </button>
