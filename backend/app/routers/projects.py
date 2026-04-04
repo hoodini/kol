@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.database import get_db
 from app.models import Project, Segment, Tag, TranscriptVersion
-from app.schemas import ProjectListResponse, ProjectResponse
+from app.schemas import ProjectListResponse, ProjectResponse, ProjectUpdate
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -95,8 +95,7 @@ async def get_project(project_id: str, db: AsyncSession = Depends(get_db)):
 @router.patch("/{project_id}")
 async def update_project(
     project_id: str,
-    name: str | None = None,
-    tags: list[str] | None = None,
+    body: ProjectUpdate,
     db: AsyncSession = Depends(get_db),
 ):
     """Update project name or tags."""
@@ -107,13 +106,13 @@ async def update_project(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    if name is not None:
-        project.name = name
+    if body.name is not None:
+        project.name = body.name
 
-    if tags is not None:
+    if body.tags is not None:
         # Resolve or create tags
         project.tags.clear()
-        for tag_name in tags:
+        for tag_name in body.tags:
             tag_result = await db.execute(select(Tag).where(Tag.name == tag_name))
             tag = tag_result.scalar_one_or_none()
             if not tag:

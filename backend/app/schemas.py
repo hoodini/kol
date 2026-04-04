@@ -71,6 +71,11 @@ class ProjectResponse(BaseModel):
         from_attributes = True
 
 
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+
 class ProjectListResponse(BaseModel):
     projects: list[ProjectResponse]
     total: int
