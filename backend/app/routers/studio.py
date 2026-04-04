@@ -466,3 +466,170 @@ async def get_speakers(
         "speakers": speakers,
         "has_diarization": len(speakers) > 0,
     }
+
+
+class MergeSpeakersRequest(BaseModel):
+    source_speaker: str
+    target_speaker: str
+
+
+@router.post("/{project_id}/merge-speakers")
+async def merge_speakers(
+    project_id: str,
+    request: MergeSpeakersRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Merge one speaker into another — all segments of source_speaker
+    become target_speaker. Creates a new version.
+    """
+    result = await db.execute(
+        select(Project).options(selectinload(Project.versions)).where(Project.id == project_id)
+    )
+    project = result.scalar_one_or_none()
+    if not project or not project.versions:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    latest_version = max(project.versions, key=lambda v: v.version_number)
+    seg_result = await db.execute(
+        select(Segment)
+        .options(selectinload(Segment.words))
+        .where(Segment.version_id == latest_version.id)
+        .order_by(Segment.index_num)
+    )
+    db_segments = seg_result.scalars().all()
+
+    if not any(seg.speaker == request.source_speaker for seg in db_segments):
+        raise HTTPException(status_code=404, detail=f"Speaker '{request.source_speaker}' not found")
+
+    max_version = max((v.version_number for v in project.versions), default=0)
+    new_version = TranscriptVersion(project_id=project_id, version_number=max_version + 1)
+    db.add(new_version)
+    await db.flush()
+
+    for seg in db_segments:
+        new_speaker = request.target_speaker if seg.speaker == request.source_speaker else seg.speaker
+        new_seg = Segment(
+            version_id=new_version.id, index_num=seg.index_num,
+            start_time=seg.start_time, end_time=seg.end_time,
+            text=seg.text, speaker=new_speaker, confidence=seg.confidence,
+        )
+        db.add(new_seg)
+        await db.flush()
+        if seg.words:
+            for w in seg.words:
+                db.add(Word(segment_id=new_seg.id, word=w.word,
+                            start_time=w.start_time, end_time=w.end_time, confidence=w.confidence))
+
+    await db.commit()
+
+    all_speakers = sorted(set(
+        request.target_speaker if s.speaker == request.source_speaker else s.speaker
+        for s in db_segments if s.speaker
+    ))
+    return {"status": "merged", "version_number": new_version.version_number, "speakers": all_speakers}
+
+
+@router.post("/{project_id}/clear-speakers")
+async def clear_speakers(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Remove all speaker labels from segments. Creates a new version."""
+    result = await db.execute(
+        select(Project).options(selectinload(Project.versions)).where(Project.id == project_id)
+    )
+    project = result.scalar_one_or_none()
+    if not project or not project.versions:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    latest_version = max(project.versions, key=lambda v: v.version_number)
+    seg_result = await db.execute(
+        select(Segment)
+        .options(selectinload(Segment.words))
+        .where(Segment.version_id == latest_version.id)
+        .order_by(Segment.index_num)
+    )
+    db_segments = seg_result.scalars().all()
+
+    max_version = max((v.version_number for v in project.versions), default=0)
+    new_version = TranscriptVersion(project_id=project_id, version_number=max_version + 1)
+    db.add(new_version)
+    await db.flush()
+
+    for seg in db_segments:
+        new_seg = Segment(
+            version_id=new_version.id, index_num=seg.index_num,
+            start_time=seg.start_time, end_time=seg.end_time,
+            text=seg.text, speaker=None, confidence=seg.confidence,
+        )
+        db.add(new_seg)
+        await db.flush()
+        if seg.words:
+            for w in seg.words:
+                db.add(Word(segment_id=new_seg.id, word=w.word,
+                            start_time=w.start_time, end_time=w.end_time, confidence=w.confidence))
+
+    await db.commit()
+    return {"status": "cleared", "version_number": new_version.version_number}
+
+
+class DeleteSpeakerSegmentsRequest(BaseModel):
+    speaker: str
+
+
+@router.post("/{project_id}/delete-speaker-segments")
+async def delete_speaker_segments(
+    project_id: str,
+    request: DeleteSpeakerSegmentsRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete all segments belonging to a specific speaker. Creates a new version."""
+    result = await db.execute(
+        select(Project).options(selectinload(Project.versions)).where(Project.id == project_id)
+    )
+    project = result.scalar_one_or_none()
+    if not project or not project.versions:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    latest_version = max(project.versions, key=lambda v: v.version_number)
+    seg_result = await db.execute(
+        select(Segment)
+        .options(selectinload(Segment.words))
+        .where(Segment.version_id == latest_version.id)
+        .order_by(Segment.index_num)
+    )
+    db_segments = seg_result.scalars().all()
+
+    kept_segments = [s for s in db_segments if s.speaker != request.speaker]
+    if len(kept_segments) == len(db_segments):
+        raise HTTPException(status_code=404, detail=f"Speaker '{request.speaker}' not found")
+
+    max_version = max((v.version_number for v in project.versions), default=0)
+    new_version = TranscriptVersion(project_id=project_id, version_number=max_version + 1)
+    db.add(new_version)
+    await db.flush()
+
+    for idx, seg in enumerate(kept_segments):
+        new_seg = Segment(
+            version_id=new_version.id, index_num=idx,
+            start_time=seg.start_time, end_time=seg.end_time,
+            text=seg.text, speaker=seg.speaker, confidence=seg.confidence,
+        )
+        db.add(new_seg)
+        await db.flush()
+        if seg.words:
+            for w in seg.words:
+                db.add(Word(segment_id=new_seg.id, word=w.word,
+                            start_time=w.start_time, end_time=w.end_time, confidence=w.confidence))
+
+    await db.commit()
+
+    remaining_speakers = sorted(set(s.speaker for s in kept_segments if s.speaker))
+    deleted_count = len(db_segments) - len(kept_segments)
+    return {
+        "status": "deleted",
+        "version_number": new_version.version_number,
+        "speakers": remaining_speakers,
+        "deleted_count": deleted_count,
+    }

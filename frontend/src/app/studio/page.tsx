@@ -24,6 +24,10 @@ import {
   X,
   Users,
   UserPen,
+  Merge,
+  Trash2,
+  Filter,
+  Eraser,
 } from "lucide-react";
 
 export default function StudioPage() {
@@ -61,6 +65,8 @@ function StudioContent() {
   const [renamingSpeaker, setRenamingSpeaker] = useState<string | null>(null);
   const [speakerRenameValue, setSpeakerRenameValue] = useState("");
   const [numSpeakersInput, setNumSpeakersInput] = useState("");
+  const [filterSpeaker, setFilterSpeaker] = useState<string | null>(null);
+  const [mergingSpeaker, setMergingSpeaker] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const segmentRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
@@ -177,6 +183,52 @@ function StudioContent() {
     }
     setRenamingSpeaker(null);
     setSpeakerRenameValue("");
+  };
+
+  const handleMergeSpeaker = async (source: string, target: string) => {
+    if (!projectId || source === target) return;
+    try {
+      const result = await api.mergeSpeakers(projectId, source, target);
+      setSpeakers(result.speakers);
+      const studioData = await api.getStudioData(projectId);
+      setData(studioData);
+      setSegments(studioData.segments);
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
+    setMergingSpeaker(null);
+  };
+
+  const handleDeleteSpeakerSegments = async (speaker: string) => {
+    if (!projectId) return;
+    const msg = `${t("diarize.confirmDelete", language)} "${speaker}"?`;
+    if (!confirm(msg)) return;
+    try {
+      const result = await api.deleteSpeakerSegments(projectId, speaker);
+      setSpeakers(result.speakers);
+      if (filterSpeaker === speaker) setFilterSpeaker(null);
+      const studioData = await api.getStudioData(projectId);
+      setData(studioData);
+      setSegments(studioData.segments);
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
+  };
+
+  const handleClearSpeakers = async () => {
+    if (!projectId) return;
+    if (!confirm(t("diarize.confirmClear", language))) return;
+    try {
+      await api.clearSpeakers(projectId);
+      setSpeakers([]);
+      setFilterSpeaker(null);
+      setShowSpeakerPanel(false);
+      const studioData = await api.getStudioData(projectId);
+      setData(studioData);
+      setSegments(studioData.segments);
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
   };
 
   // Audio time tracking
@@ -528,19 +580,66 @@ function StudioContent() {
       {showSpeakerPanel && speakers.length > 0 && (
         <div className="px-6 animate-fade-in">
           <div className="bg-violet-50/50 border border-violet-200/50 rounded-2xl p-4">
+            {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-violet-800 flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 {t("diarize.button", language)} ({speakers.length})
               </h3>
-              <button
-                onClick={runDiarization}
-                disabled={diarizing}
-                className="text-xs text-violet-600 hover:text-violet-800 transition-colors"
-              >
-                {diarizing ? t("diarize.running", language) : language === "he" ? "הרץ שוב" : "Run again"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleClearSpeakers}
+                  className="text-xs text-rose-500 hover:text-rose-700 transition-colors flex items-center gap-1"
+                  title={t("diarize.clearAll", language)}
+                >
+                  <Eraser className="w-3 h-3" />
+                  {t("diarize.clearAll", language)}
+                </button>
+                <span className="text-violet-300">|</span>
+                <button
+                  onClick={runDiarization}
+                  disabled={diarizing}
+                  className="text-xs text-violet-600 hover:text-violet-800 transition-colors"
+                >
+                  {diarizing ? t("diarize.running", language) : t("diarize.runAgain", language)}
+                </button>
+              </div>
             </div>
+
+            {/* Filter bar */}
+            <div className="flex items-center gap-2 mb-3">
+              <Filter className="w-3.5 h-3.5 text-violet-500" />
+              <button
+                onClick={() => setFilterSpeaker(null)}
+                className={cn(
+                  "text-xs px-2.5 py-1 rounded-lg transition-all",
+                  filterSpeaker === null
+                    ? "bg-violet-600 text-white"
+                    : "bg-white/60 text-violet-700 hover:bg-white"
+                )}
+              >
+                {t("diarize.showAll", language)}
+              </button>
+              {speakers.map((speaker, idx) => {
+                const segCount = segments.filter((s) => s.speaker === speaker).length;
+                return (
+                  <button
+                    key={speaker}
+                    onClick={() => setFilterSpeaker(filterSpeaker === speaker ? null : speaker)}
+                    className={cn(
+                      "text-xs px-2.5 py-1 rounded-lg transition-all",
+                      filterSpeaker === speaker
+                        ? "bg-violet-600 text-white"
+                        : "bg-white/60 text-violet-700 hover:bg-white"
+                    )}
+                  >
+                    {speaker} ({segCount})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Speaker cards */}
             <div className="flex flex-wrap gap-2">
               {speakers.map((speaker, idx) => {
                 const colors = [
@@ -585,19 +684,48 @@ function StudioContent() {
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </form>
+                    ) : mergingSpeaker === speaker ? (
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs">{t("diarize.mergeInto", language)}</span>
+                        {speakers.filter((s) => s !== speaker).map((target) => (
+                          <button
+                            key={target}
+                            onClick={() => handleMergeSpeaker(speaker, target)}
+                            className="text-xs px-1.5 py-0.5 rounded bg-white/80 hover:bg-white transition-colors"
+                          >
+                            {target}
+                          </button>
+                        ))}
+                        <button onClick={() => setMergingSpeaker(null)} className="p-0.5 rounded hover:bg-white/50">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
                     ) : (
                       <>
                         <span>{speaker}</span>
                         <span className="text-xs opacity-60">({segCount})</span>
                         <button
-                          onClick={() => {
-                            setRenamingSpeaker(speaker);
-                            setSpeakerRenameValue(speaker);
-                          }}
+                          onClick={() => { setRenamingSpeaker(speaker); setSpeakerRenameValue(speaker); }}
                           className="p-0.5 rounded hover:bg-white/50 transition-colors"
                           title={t("diarize.renameSpeaker", language)}
                         >
                           <UserPen className="w-3.5 h-3.5" />
+                        </button>
+                        {speakers.length > 1 && (
+                          <button
+                            onClick={() => setMergingSpeaker(speaker)}
+                            className="p-0.5 rounded hover:bg-white/50 transition-colors"
+                            title={t("diarize.mergeSpeaker", language)}
+                          >
+                            <Merge className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteSpeakerSegments(speaker)}
+                          className="p-0.5 rounded hover:bg-rose-200/50 text-rose-600/70 transition-colors"
+                          title={t("diarize.deleteSpeaker", language)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>
                     )}
@@ -605,6 +733,7 @@ function StudioContent() {
                 );
               })}
             </div>
+
             {/* Number of speakers input for re-run */}
             <div className="mt-3 flex items-center gap-2">
               <input
@@ -626,7 +755,7 @@ function StudioContent() {
 
       {/* Transcript Editor */}
       <div className="px-6 pb-8 space-y-2">
-        {segments.map((seg) => {
+        {segments.filter((seg) => !filterSpeaker || seg.speaker === filterSpeaker).map((seg) => {
           const isActive = seg.id === activeSegmentId;
           const isEdited = editedSegments.has(seg.id);
           const isLowConfidence = (seg.confidence ?? 1) < 0.7;

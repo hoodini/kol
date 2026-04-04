@@ -140,6 +140,23 @@ export const api = {
       body: JSON.stringify({ old_name: oldName, new_name: newName }),
     }),
 
+  mergeSpeakers: (projectId: string, sourceSpeaker: string, targetSpeaker: string) =>
+    request<RenameSpeakerResponse>(`/api/studio/${projectId}/merge-speakers`, {
+      method: "POST",
+      body: JSON.stringify({ source_speaker: sourceSpeaker, target_speaker: targetSpeaker }),
+    }),
+
+  clearSpeakers: (projectId: string) =>
+    request<{ status: string; version_number: number }>(`/api/studio/${projectId}/clear-speakers`, {
+      method: "POST",
+    }),
+
+  deleteSpeakerSegments: (projectId: string, speaker: string) =>
+    request<{ status: string; version_number: number; speakers: string[]; deleted_count: number }>(
+      `/api/studio/${projectId}/delete-speaker-segments`,
+      { method: "POST", body: JSON.stringify({ speaker }) },
+    ),
+
   // Settings
   getSettings: () => request<Settings>("/api/settings"),
 

@@ -105,6 +105,15 @@ const translations = {
   "diarize.speakerName": { he: "שם הדובר", en: "Speaker name" },
   "diarize.numSpeakers": { he: "מספר דוברים (אופציונלי)", en: "Number of speakers (optional)" },
   "diarize.numSpeakersHint": { he: "השאר ריק לזיהוי אוטומטי", en: "Leave empty for auto-detection" },
+  "diarize.filter": { he: "סנן לפי דובר", en: "Filter by speaker" },
+  "diarize.showAll": { he: "הצג הכל", en: "Show all" },
+  "diarize.mergeSpeaker": { he: "מזג עם דובר אחר", en: "Merge with another speaker" },
+  "diarize.mergeInto": { he: "מזג לתוך:", en: "Merge into:" },
+  "diarize.deleteSpeaker": { he: "מחק סגמנטים של דובר", en: "Delete speaker segments" },
+  "diarize.confirmDelete": { he: "למחוק את כל הסגמנטים של", en: "Delete all segments of" },
+  "diarize.clearAll": { he: "נקה סימוני דוברים", en: "Clear all speakers" },
+  "diarize.confirmClear": { he: "להסיר את כל סימוני הדוברים?", en: "Remove all speaker labels?" },
+  "diarize.runAgain": { he: "הרץ שוב", en: "Run again" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;
