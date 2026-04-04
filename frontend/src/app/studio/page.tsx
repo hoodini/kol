@@ -229,125 +229,128 @@ function StudioContent() {
         <audio ref={audioRef} src={api.getAudioUrl(projectId!)} preload="metadata" />
       )}
 
-      {/* Header - Sticky save/export bar */}
-      <div className="px-6 pt-6 pb-3 flex items-center justify-between sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-transparent transition-all duration-300" style={{ borderColor: showScrollTop ? 'var(--border)' : 'transparent' }}>
-        <div>
-          <h1 className="text-2xl font-bold">{data.project.name}</h1>
-          <p className="text-sm text-muted-foreground">
-            גרסה {data.version_number} מתוך {data.total_versions} • {segments.length} סגמנטים
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Save */}
-          <button
-            onClick={saveEdits}
-            disabled={saving || editedSegments.size === 0}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
-              saved
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                : editedSegments.size > 0
-                  ? "bg-primary text-primary-foreground hover:opacity-90"
-                  : "bg-muted text-muted-foreground"
-            )}
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : saved ? (
-              <CheckCircle2 className="w-4 h-4" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {saved ? "נשמר!" : "שמור"}
-          </button>
-
-          {/* Export dropdown */}
-          <div className="relative">
+      {/* Sticky top section: Header + Media Player */}
+      <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg transition-shadow duration-300" style={{ boxShadow: showScrollTop ? '0 4px 20px rgba(124, 58, 237, 0.08)' : 'none' }}>
+        {/* Header - save/export bar */}
+        <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">{data.project.name}</h1>
+            <p className="text-sm text-muted-foreground">
+              גרסה {data.version_number} מתוך {data.total_versions} • {segments.length} סגמנטים
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Save */}
             <button
-              onClick={() => setShowExport(!showExport)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
+              onClick={saveEdits}
+              disabled={saving || editedSegments.size === 0}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                saved
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                  : editedSegments.size > 0
+                    ? "bg-primary text-primary-foreground hover:opacity-90"
+                    : "bg-muted text-muted-foreground"
+              )}
             >
-              <Download className="w-4 h-4" />
-              ייצוא
-              <ChevronDown className="w-3 h-3" />
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : saved ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {saved ? "נשמר!" : "שמור"}
             </button>
-            {showExport && (
-              <div className="absolute left-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
-                {["srt", "vtt", "ass", "txt", "json"].map((fmt) => (
-                  <button
-                    key={fmt}
-                    onClick={() => exportTranscript(fmt)}
-                    className="w-full text-right px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
-                  >
-                    {fmt === "srt" && "SubRip (.srt)"}
-                    {fmt === "vtt" && "WebVTT (.vtt)"}
-                    {fmt === "ass" && "Advanced SSA (.ass)"}
-                    {fmt === "txt" && "טקסט (.txt)"}
-                    {fmt === "json" && "JSON (.json)"}
-                  </button>
-                ))}
-              </div>
-            )}
+
+            {/* Export dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowExport(!showExport)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                ייצוא
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              {showExport && (
+                <div className="absolute left-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
+                  {["srt", "vtt", "ass", "txt", "json"].map((fmt) => (
+                    <button
+                      key={fmt}
+                      onClick={() => exportTranscript(fmt)}
+                      className="w-full text-right px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
+                    >
+                      {fmt === "srt" && "SubRip (.srt)"}
+                      {fmt === "vtt" && "WebVTT (.vtt)"}
+                      {fmt === "ass" && "Advanced SSA (.ass)"}
+                      {fmt === "txt" && "טקסט (.txt)"}
+                      {fmt === "json" && "JSON (.json)"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Media Player */}
-      <div className="px-6 pb-4">
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          {/* Video player (shown when video available) */}
-          {data.project.has_video && (
-            <div className="relative bg-black">
-              <video
-                ref={audioRef as any}
-                src={api.getVideoUrl(projectId!)}
-                preload="metadata"
-                className="w-full max-h-[360px] object-contain"
-                onClick={togglePlay}
-              />
-            </div>
-          )}
-
-          <div className="p-4 space-y-3">
-            {/* Progress bar */}
-            <div
-              className="h-2 bg-secondary rounded-full cursor-pointer overflow-hidden"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const pct = 1 - (e.clientX - rect.left) / rect.width;
-                seekTo(pct * duration);
-              }}
-            >
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-100"
-                style={{ width: `${progress}%`, marginRight: 0, marginLeft: "auto" }}
-              />
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => skip(-5)} className="p-2 rounded-lg hover:bg-secondary">
-                  <SkipForward className="w-5 h-5" />
-                </button>
-                <button
+        {/* Media Player */}
+        <div className="px-6 pb-4">
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            {/* Video player (shown when video available) */}
+            {data.project.has_video && (
+              <div className="relative bg-black">
+                <video
+                  ref={audioRef as any}
+                  src={api.getVideoUrl(projectId!)}
+                  preload="metadata"
+                  className="w-full max-h-[360px] object-contain"
                   onClick={togglePlay}
-                  className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
-                >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 mr-0.5" />}
-                </button>
-                <button onClick={() => skip(5)} className="p-2 rounded-lg hover:bg-secondary">
-                  <SkipBack className="w-5 h-5" />
-                </button>
+                />
+              </div>
+            )}
+
+            <div className="p-4 space-y-3">
+              {/* Progress bar */}
+              <div
+                className="h-2 bg-secondary rounded-full cursor-pointer overflow-hidden"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const pct = 1 - (e.clientX - rect.left) / rect.width;
+                  seekTo(pct * duration);
+                }}
+              >
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-100"
+                  style={{ width: `${progress}%`, marginRight: 0, marginLeft: "auto" }}
+                />
               </div>
 
-              <div className="flex items-center gap-3">
-                {data.project.has_video && (
-                  <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">🎬 וידאו</span>
-                )}
-                <span className="text-sm text-muted-foreground font-mono" dir="ltr">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </span>
+              {/* Controls */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => skip(-5)} className="p-2 rounded-lg hover:bg-secondary">
+                    <SkipForward className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={togglePlay}
+                    className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-opacity"
+                  >
+                    {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 mr-0.5" />}
+                  </button>
+                  <button onClick={() => skip(5)} className="p-2 rounded-lg hover:bg-secondary">
+                    <SkipBack className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {data.project.has_video && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">🎬 וידאו</span>
+                  )}
+                  <span className="text-sm text-muted-foreground font-mono" dir="ltr">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
