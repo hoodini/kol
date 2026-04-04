@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, type Engine } from "@/lib/api";
 import { cn, formatFileSize } from "@/lib/utils";
+import { t } from "@/lib/i18n";
+import { useAppStore } from "@/stores/app-store";
 import {
   Upload,
   X,
@@ -13,6 +15,7 @@ import {
   FileVideo,
   FolderOpen,
   ChevronDown,
+  FolderUp,
 } from "lucide-react";
 
 const ACCEPTED_TYPES = [
@@ -26,6 +29,7 @@ export default function TranscribePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const { language: uiLang } = useAppStore();
 
   const [files, setFiles] = useState<File[]>([]);
   const [engine, setEngine] = useState("local");
@@ -44,6 +48,16 @@ export default function TranscribePage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const folderFiles = Array.from(e.target.files).filter((f) =>
+        f.type.startsWith("audio/") || f.type.startsWith("video/") ||
+        /\.(mp3|wav|m4a|flac|ogg|wma|aac|mp4|mkv|avi|mov|webm|wmv|flv)$/i.test(f.name)
+      );
+      setFiles((prev) => [...prev, ...folderFiles]);
     }
   };
 
@@ -81,56 +95,91 @@ export default function TranscribePage() {
   return (
     <div className="space-y-8 animate-fade-in max-w-3xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold">תמלול חדש</h1>
+        <h1 className="text-3xl font-bold">{t("transcribe.title", uiLang)}</h1>
         <p className="text-muted-foreground mt-1">
-          העלה קבצים, גרור לכאן, או ציין נתיב לתיקייה
+          {t("transcribe.subtitle", uiLang)}
         </p>
       </div>
 
-      {/* Drop Zone */}
-      <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={cn(
-          "relative border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-all duration-300",
-          isDragging
-            ? "border-primary bg-primary/5 scale-[1.02]"
-            : "border-border hover:border-primary/50 hover:bg-secondary/50"
-        )}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept={ACCEPTED_TYPES}
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        <div className="space-y-4">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Upload className={cn("w-8 h-8 text-primary", isDragging && "animate-bounce")} />
+      {/* Drop Zone + Folder Picker */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Files drop zone */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={cn(
+            "relative border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 sm:col-span-2",
+            isDragging
+              ? "border-primary bg-primary/5 scale-[1.02]"
+              : "border-border hover:border-primary/50 hover:bg-secondary/50"
+          )}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept={ACCEPTED_TYPES}
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <div className="space-y-3">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Upload className={cn("w-7 h-7 text-primary", isDragging && "animate-bounce")} />
+            </div>
+            <div>
+              <p className="text-lg font-medium">
+                {uiLang === "he" ? "גרור קבצים לכאן" : "Drag files here"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {uiLang === "he" ? "או לחץ לבחירת קבצים" : "Or click to select files"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-lg font-medium">גרור קבצים לכאן</p>
-            <p className="text-sm text-muted-foreground">
-              או לחץ לבחירת קבצים • אודיו ווידאו בכל פורמט
-            </p>
+        </div>
+
+        {/* Folder picker */}
+        <div
+          onClick={() => folderInputRef.current?.click()}
+          className="border-2 border-dashed border-border rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 hover:border-primary/50 hover:bg-secondary/50"
+        >
+          <input
+            ref={folderInputRef}
+            type="file"
+            onChange={handleFolderSelect}
+            className="hidden"
+            {...{ webkitdirectory: "", directory: "" } as any}
+          />
+          <div className="space-y-3">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+              <FolderUp className="w-7 h-7 text-primary" />
+            </div>
+            <div>
+              <p className="text-lg font-medium">
+                {uiLang === "he" ? "בחר תיקייה" : "Select Folder"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {uiLang === "he" ? "כל קבצי האודיו והוידאו" : "All audio & video files"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Folder path input */}
+      {/* Server-side folder path input */}
       <div className="flex items-center gap-3">
         <div className="flex-1 relative">
-          <FolderOpen className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <FolderOpen className={cn("absolute top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground", uiLang === "he" ? "right-3" : "left-3")} />
           <input
             type="text"
-            placeholder="או הדבק נתיב לתיקייה: /Users/me/courses/..."
+            placeholder={uiLang === "he" ? "או הדבק נתיב לתיקייה בשרת: /Users/me/courses/..." : "Or paste a server folder path: /Users/me/courses/..."}
             value={folderPath}
             onChange={(e) => setFolderPath(e.target.value)}
-            className="w-full pr-11 pl-4 py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className={cn(
+              "w-full py-3 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/50",
+              uiLang === "he" ? "pr-11 pl-4" : "pl-11 pr-4"
+            )}
             dir="ltr"
           />
         </div>
@@ -140,7 +189,7 @@ export default function TranscribePage() {
       {files.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium text-muted-foreground">
-            {files.length} קבצים נבחרו
+            {files.length} {uiLang === "he" ? "קבצים נבחרו" : "files selected"}
           </p>
           <div className="space-y-2 max-h-60 overflow-y-auto">
             {files.map((file, idx) => {
@@ -176,7 +225,7 @@ export default function TranscribePage() {
       <div className="grid grid-cols-2 gap-4">
         {/* Engine */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">מנוע תמלול</label>
+          <label className="text-sm font-medium">{uiLang === "he" ? "מנוע תמלול" : "Transcription Engine"}</label>
           <select
             value={engine}
             onChange={(e) => setEngine(e.target.value)}
@@ -191,7 +240,7 @@ export default function TranscribePage() {
 
         {/* Language */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">שפה</label>
+          <label className="text-sm font-medium">{uiLang === "he" ? "שפה" : "Language"}</label>
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
@@ -221,12 +270,12 @@ export default function TranscribePage() {
         {isUploading ? (
           <span className="flex items-center justify-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin" />
-            מעלה ומתמלל...
+            {uiLang === "he" ? "מעלה ומתמלל..." : "Uploading & transcribing..."}
           </span>
         ) : (
           <span className="flex items-center justify-center gap-2">
             <Mic className="w-5 h-5" />
-            התחל תמלול
+            {t("transcribe.start", uiLang)}
           </span>
         )}
       </button>
