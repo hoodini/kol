@@ -16,6 +16,7 @@ import {
   ChevronDown,
   History,
   CheckCircle2,
+  ArrowUp,
 } from "lucide-react";
 
 export default function StudioPage() {
@@ -41,9 +42,23 @@ function StudioContent() {
   const [duration, setDuration] = useState(0);
   const [activeSegmentId, setActiveSegmentId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const segmentRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+
+  // Show "back to top" button on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (projectId) loadStudioData();
@@ -214,8 +229,8 @@ function StudioContent() {
         <audio ref={audioRef} src={api.getAudioUrl(projectId!)} preload="metadata" />
       )}
 
-      {/* Header */}
-      <div className="px-6 pt-6 flex items-center justify-between">
+      {/* Header - Sticky save/export bar */}
+      <div className="px-6 pt-6 pb-3 flex items-center justify-between sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-transparent transition-all duration-300" style={{ borderColor: showScrollTop ? 'var(--border)' : 'transparent' }}>
         <div>
           <h1 className="text-2xl font-bold">{data.project.name}</h1>
           <p className="text-sm text-muted-foreground">
@@ -278,7 +293,7 @@ function StudioContent() {
       </div>
 
       {/* Media Player */}
-      <div className="px-6 sticky top-0 z-30 bg-background/80 backdrop-blur-lg pb-4">
+      <div className="px-6 pb-4">
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           {/* Video player (shown when video available) */}
           {data.project.has_video && (
@@ -411,6 +426,18 @@ function StudioContent() {
           );
         })}
       </div>
+
+      {/* Back to top button */}
+      <button
+        onClick={scrollToTop}
+        className={cn(
+          "fixed bottom-20 left-4 w-10 h-10 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-all duration-300 hover:opacity-90 hover:scale-110 z-50",
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        )}
+        title="חזרה למעלה"
+      >
+        <ArrowUp className="w-5 h-5" />
+      </button>
 
       {/* Keyboard shortcuts hint */}
       <div className="fixed bottom-4 left-4 text-xs text-muted-foreground bg-card/80 backdrop-blur px-3 py-2 rounded-lg border border-border" dir="ltr">
