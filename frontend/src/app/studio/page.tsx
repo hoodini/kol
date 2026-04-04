@@ -22,6 +22,8 @@ import {
   Pencil,
   Check,
   X,
+  Users,
+  UserPen,
 } from "lucide-react";
 
 export default function StudioPage() {
@@ -50,6 +52,15 @@ function StudioContent() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+
+  // Speaker diarization state
+  const [speakers, setSpeakers] = useState<string[]>([]);
+  const [diarizing, setDiarizing] = useState(false);
+  const [diarizeComplete, setDiarizeComplete] = useState(false);
+  const [showSpeakerPanel, setShowSpeakerPanel] = useState(false);
+  const [renamingSpeaker, setRenamingSpeaker] = useState<string | null>(null);
+  const [speakerRenameValue, setSpeakerRenameValue] = useState("");
+  const [numSpeakersInput, setNumSpeakersInput] = useState("");
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const segmentRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
@@ -116,6 +127,56 @@ function StudioContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Load speakers when data is ready
+  useEffect(() => {
+    if (data && projectId) {
+      const hasSpeakers = data.segments.some((s) => s.speaker);
+      if (hasSpeakers) {
+        const uniqueSpeakers = [...new Set(data.segments.map((s) => s.speaker).filter(Boolean))] as string[];
+        setSpeakers(uniqueSpeakers.sort());
+        setShowSpeakerPanel(true);
+      }
+    }
+  }, [data, projectId]);
+
+  const runDiarization = async () => {
+    if (!projectId) return;
+    setDiarizing(true);
+    setDiarizeComplete(false);
+    try {
+      const numSpeakers = numSpeakersInput ? parseInt(numSpeakersInput) : undefined;
+      const result = await api.diarizeProject(projectId, numSpeakers);
+      setSpeakers(result.speakers);
+      setShowSpeakerPanel(true);
+      setDiarizeComplete(true);
+      // Reload studio data with the new version
+      const studioData = await api.getStudioData(projectId);
+      setData(studioData);
+      setSegments(studioData.segments);
+      setTimeout(() => setDiarizeComplete(false), 3000);
+    } catch (err: any) {
+      alert(`${t("diarize.error", language)}: ${err.message}`);
+    } finally {
+      setDiarizing(false);
+    }
+  };
+
+  const handleRenameSpeaker = async (oldName: string) => {
+    if (!projectId || !speakerRenameValue.trim()) return;
+    try {
+      const result = await api.renameSpeaker(projectId, oldName, speakerRenameValue.trim());
+      setSpeakers(result.speakers);
+      // Reload studio data
+      const studioData = await api.getStudioData(projectId);
+      setData(studioData);
+      setSegments(studioData.segments);
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    }
+    setRenamingSpeaker(null);
+    setSpeakerRenameValue("");
   };
 
   // Audio time tracking
@@ -334,6 +395,41 @@ function StudioContent() {
               {saved ? t("studio.saved", language) : t("studio.save", language)}
             </button>
 
+            {/* Diarize button */}
+            <button
+              onClick={() => {
+                if (speakers.length > 0) {
+                  setShowSpeakerPanel(!showSpeakerPanel);
+                } else {
+                  runDiarization();
+                }
+              }}
+              disabled={diarizing}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                diarizeComplete
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                  : speakers.length > 0
+                    ? "bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100"
+                    : "border border-border hover:bg-secondary"
+              )}
+            >
+              {diarizing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : diarizeComplete ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <Users className="w-4 h-4" />
+              )}
+              {diarizing
+                ? t("diarize.running", language)
+                : diarizeComplete
+                  ? t("diarize.complete", language)
+                  : speakers.length > 0
+                    ? `${speakers.length} ${t("diarize.speakers", language)}`
+                    : t("diarize.button", language)}
+            </button>
+
             {/* Export dropdown */}
             <div className="relative">
               <button
@@ -428,6 +524,106 @@ function StudioContent() {
         </div>
       </div>
 
+      {/* Speaker Panel */}
+      {showSpeakerPanel && speakers.length > 0 && (
+        <div className="px-6 animate-fade-in">
+          <div className="bg-violet-50/50 border border-violet-200/50 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-violet-800 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                {t("diarize.button", language)} ({speakers.length})
+              </h3>
+              <button
+                onClick={runDiarization}
+                disabled={diarizing}
+                className="text-xs text-violet-600 hover:text-violet-800 transition-colors"
+              >
+                {diarizing ? t("diarize.running", language) : language === "he" ? "הרץ שוב" : "Run again"}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {speakers.map((speaker, idx) => {
+                const colors = [
+                  "bg-violet-100 text-violet-800 border-violet-300",
+                  "bg-blue-100 text-blue-800 border-blue-300",
+                  "bg-emerald-100 text-emerald-800 border-emerald-300",
+                  "bg-amber-100 text-amber-800 border-amber-300",
+                  "bg-rose-100 text-rose-800 border-rose-300",
+                  "bg-cyan-100 text-cyan-800 border-cyan-300",
+                  "bg-pink-100 text-pink-800 border-pink-300",
+                  "bg-lime-100 text-lime-800 border-lime-300",
+                ];
+                const colorClass = colors[idx % colors.length];
+                const segCount = segments.filter((s) => s.speaker === speaker).length;
+
+                return (
+                  <div
+                    key={speaker}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all",
+                      colorClass
+                    )}
+                  >
+                    {renamingSpeaker === speaker ? (
+                      <form
+                        onSubmit={(e) => { e.preventDefault(); handleRenameSpeaker(speaker); }}
+                        className="flex items-center gap-1"
+                      >
+                        <input
+                          autoFocus
+                          type="text"
+                          value={speakerRenameValue}
+                          onChange={(e) => setSpeakerRenameValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Escape") setRenamingSpeaker(null); }}
+                          className="w-24 px-1.5 py-0.5 rounded bg-white/80 border border-current/20 text-xs focus:outline-none"
+                          placeholder={t("diarize.speakerName", language)}
+                        />
+                        <button type="submit" className="p-0.5 rounded hover:bg-white/50">
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button type="button" onClick={() => setRenamingSpeaker(null)} className="p-0.5 rounded hover:bg-white/50">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </form>
+                    ) : (
+                      <>
+                        <span>{speaker}</span>
+                        <span className="text-xs opacity-60">({segCount})</span>
+                        <button
+                          onClick={() => {
+                            setRenamingSpeaker(speaker);
+                            setSpeakerRenameValue(speaker);
+                          }}
+                          className="p-0.5 rounded hover:bg-white/50 transition-colors"
+                          title={t("diarize.renameSpeaker", language)}
+                        >
+                          <UserPen className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Number of speakers input for re-run */}
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="number"
+                min="2"
+                max="20"
+                value={numSpeakersInput}
+                onChange={(e) => setNumSpeakersInput(e.target.value)}
+                className="w-20 px-2 py-1 rounded-lg border border-violet-200 bg-white/80 text-xs text-violet-800 focus:outline-none focus:ring-1 focus:ring-violet-400"
+                placeholder="2-20"
+              />
+              <span className="text-xs text-violet-600">
+                {t("diarize.numSpeakers", language)} — {t("diarize.numSpeakersHint", language)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Transcript Editor */}
       <div className="px-6 pb-8 space-y-2">
         {segments.map((seg) => {
@@ -447,8 +643,27 @@ function StudioContent() {
               )}
               onClick={() => seekTo(seg.start_time)}
             >
-              {/* Timestamp range */}
-              <div className="flex-shrink-0 w-28 pt-1 space-y-0.5">
+              {/* Speaker label + Timestamp */}
+              <div className="flex-shrink-0 w-28 pt-1 space-y-1">
+                {seg.speaker && (() => {
+                  const speakerIdx = speakers.indexOf(seg.speaker);
+                  const badgeColors = [
+                    "bg-violet-100 text-violet-700",
+                    "bg-blue-100 text-blue-700",
+                    "bg-emerald-100 text-emerald-700",
+                    "bg-amber-100 text-amber-700",
+                    "bg-rose-100 text-rose-700",
+                    "bg-cyan-100 text-cyan-700",
+                    "bg-pink-100 text-pink-700",
+                    "bg-lime-100 text-lime-700",
+                  ];
+                  const badgeColor = badgeColors[speakerIdx >= 0 ? speakerIdx % badgeColors.length : 0];
+                  return (
+                    <div className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md w-fit truncate max-w-full", badgeColor)}>
+                      {seg.speaker}
+                    </div>
+                  );
+                })()}
                 <div className="flex items-center gap-1 text-xs font-mono text-muted-foreground" dir="ltr">
                   <span className="text-primary font-semibold">{formatTime(seg.start_time)}</span>
                   <span className="text-muted-foreground/50">→</span>

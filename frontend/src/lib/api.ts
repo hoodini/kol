@@ -123,6 +123,22 @@ export const api = {
     return blob;
   },
 
+  // Speaker Diarization
+  diarizeProject: (projectId: string, numSpeakers?: number) =>
+    request<DiarizeResponse>(`/api/studio/${projectId}/diarize`, {
+      method: "POST",
+      body: JSON.stringify({ num_speakers: numSpeakers ?? null }),
+    }),
+
+  getSpeakers: (projectId: string) =>
+    request<SpeakersResponse>(`/api/studio/${projectId}/speakers`),
+
+  renameSpeaker: (projectId: string, oldName: string, newName: string) =>
+    request<RenameSpeakerResponse>(`/api/studio/${projectId}/rename-speaker`, {
+      method: "POST",
+      body: JSON.stringify({ old_name: oldName, new_name: newName }),
+    }),
+
   // Settings
   getSettings: () => request<Settings>("/api/settings"),
 
@@ -200,6 +216,24 @@ export interface ExportFormat {
   id: string;
   name: string;
   extension: string;
+}
+
+export interface DiarizeResponse {
+  status: string;
+  version_number: number;
+  speakers: string[];
+  segment_count: number;
+}
+
+export interface SpeakersResponse {
+  speakers: string[];
+  has_diarization: boolean;
+}
+
+export interface RenameSpeakerResponse {
+  status: string;
+  version_number: number;
+  speakers: string[];
 }
 
 export interface Settings {

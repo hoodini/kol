@@ -11,3 +11,5 @@ yt-dlp==2025.3.31
 httpx==0.28.1
 python-dotenv==1.1.0
 aiofiles==24.1.0
+pyannote.audio==3.3.2
+torch>=2.0.0
