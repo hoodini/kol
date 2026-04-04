@@ -51,19 +51,20 @@ async def upload_and_transcribe(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload a single file and start transcription."""
-    # Save uploaded file
-    upload_path = settings.upload_dir / file.filename
+    # Use only the filename (strip any folder path)
+    safe_name = Path(file.filename).name
+    upload_path = settings.upload_dir / safe_name
     with open(upload_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     # Detect if uploaded file is video
     video_extensions = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".wmv", ".flv"}
-    is_video = Path(file.filename).suffix.lower() in video_extensions
+    is_video = Path(safe_name).suffix.lower() in video_extensions
 
     # Create project
     project = Project(
-        name=Path(file.filename).stem,
-        source_filename=file.filename,
+        name=Path(safe_name).stem,
+        source_filename=safe_name,
         source_path=str(upload_path),
         video_path=str(upload_path) if is_video else None,
         has_video="true" if is_video else "false",
@@ -90,17 +91,33 @@ async def upload_multiple(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload multiple files for batch transcription."""
+    video_extensions = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".wmv", ".flv"}
     project_ids = []
 
     for file in files:
-        upload_path = settings.upload_dir / file.filename
+        # Use only the filename (strip folder path from browser folder picker)
+        safe_name = Path(file.filename).name
+        upload_path = settings.upload_dir / safe_name
+
+        # Handle duplicate filenames
+        counter = 1
+        while upload_path.exists():
+            stem = Path(safe_name).stem
+            suffix = Path(safe_name).suffix
+            upload_path = settings.upload_dir / f"{stem}_{counter}{suffix}"
+            counter += 1
+
         with open(upload_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
 
+        is_video = Path(safe_name).suffix.lower() in video_extensions
+
         project = Project(
-            name=Path(file.filename).stem,
-            source_filename=file.filename,
+            name=Path(safe_name).stem,
+            source_filename=safe_name,
             source_path=str(upload_path),
+            video_path=str(upload_path) if is_video else None,
+            has_video="true" if is_video else "false",
             source_type="file",
             language=language,
         )
@@ -111,6 +128,7 @@ async def upload_multiple(
         background_tasks.add_task(_run_transcription, project.id, upload_path, engine, language)
 
     await db.commit()
+    logger.info(f"[batch] Accepted {len(project_ids)} files, engine={engine} lang={language}")
     return {"project_ids": project_ids, "count": len(project_ids), "status": "started"}
 
 
