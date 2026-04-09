@@ -235,7 +235,16 @@ async def transcribe_folder(
     db: AsyncSession = Depends(get_db),
 ):
     """Scan a local folder and transcribe all matching files."""
-    folder = Path(request.folder_path)
+    folder = Path(request.folder_path).resolve()
+
+    # Prevent directory traversal — folder must be within allowed_scan_dir
+    allowed_dir = settings.allowed_scan_dir.resolve()
+    if not folder.is_relative_to(allowed_dir):
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: folder path is outside the allowed directory",
+        )
+
     if not folder.exists() or not folder.is_dir():
         raise HTTPException(status_code=400, detail=f"Folder not found: {request.folder_path}")
 
