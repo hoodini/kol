@@ -15,7 +15,7 @@ Transcribe any audio or video — local files, YouTube, Vimeo, entire playlists 
 [![Made with Next.js](https://img.shields.io/badge/Frontend-Next.js_15-black?logo=next.js)](https://nextjs.org)
 [![Hebrew First](https://img.shields.io/badge/%D7%A2%D7%91%D7%A8%D7%99%D7%AA-First-blue)](#)
 
-[Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [**מדריך בעברית**](SETUP_GUIDE.md) · [**LLM Setup Prompt**](LLM_SETUP_PROMPT.md)
+[Quick Start](#-quick-start) · [Features](#-features) · [Architecture](#-architecture) · [Troubleshooting](#troubleshooting) · [**מדריך בעברית**](SETUP_GUIDE.md) · [**LLM Setup Prompt**](LLM_SETUP_PROMPT.md)
 
 </div>
 
@@ -317,7 +317,9 @@ npm install
 ```bash
 # Terminal 1 — Backend
 cd backend
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+python run.py                    # Recommended — handles Windows event-loop automatically
+# Or: uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload  (macOS/Linux only)
 
 # Terminal 2 — Frontend
 cd frontend
@@ -401,6 +403,74 @@ blitzai/
 ├── start.sh
 └── start.bat
 ```
+
+---
+
+## Troubleshooting
+
+Below are common issues that have been identified and resolved. See also the [Windows Setup Guide](WINDOWS.md) for Windows-specific details.
+
+<details>
+<summary><strong>Windows: <code>NotImplementedError</code> — all transcription fails</strong></summary>
+
+**Symptom:** Uploading files or submitting URLs returns `NotImplementedError`.
+
+**Cause:** On Windows, `asyncio.create_subprocess_exec` requires a `ProactorEventLoop`. Running uvicorn directly (especially with `--reload`) may use a `SelectorEventLoop` instead.
+
+**Fix:** Always start the backend with:
+
+```powershell
+cd backend
+.venv\Scripts\activate
+python run.py
+```
+
+`run.py` sets the correct event-loop policy before starting uvicorn. **Do not use** `uvicorn app.main:app --reload` on Windows.
+
+</details>
+
+<details>
+<summary><strong>Windows: <code>yt-dlp</code> / <code>ffmpeg</code> not found when running inside a venv</strong></summary>
+
+**Symptom:** Submitting a YouTube URL returns `{"detail":""}` (HTTP 400).
+
+**Cause:** On Windows, subprocess calls don't inherit the venv's `Scripts/` directory, so `yt-dlp`, `ffmpeg`, and `ffprobe` can't be found even though they're installed.
+
+**Fix:** This is handled automatically — the backend uses an executable resolver (`exec_resolver.py`) that checks the venv directory first, then falls back to the system PATH. Just make sure you:
+
+1. Install dependencies inside the venv: `pip install -r requirements.txt`
+2. Have `ffmpeg` installed system-wide (`winget install Gyan.FFmpeg`) or inside the venv
+
+</details>
+
+<details>
+<summary><strong>YouTube playlists fail with "Incomplete data received"</strong></summary>
+
+**Symptom:** YouTube playlists return `WARNING: Incomplete data received. Giving up after 3 retries`.
+
+**Cause:** Older pinned versions of `yt-dlp` break when YouTube changes their internal API.
+
+**Fix:** The dependency is now set to `yt-dlp>=2025.3.31` so pip will pull the latest compatible version. If you're on an older install, upgrade:
+
+```bash
+pip install --upgrade yt-dlp
+```
+
+</details>
+
+<details>
+<summary><strong>Folder scan: directory traversal protection</strong></summary>
+
+The `/api/transcribe/folder` endpoint only allows scanning within the configured `allowed_scan_dir` (defaults to the `uploads/` directory). Attempts to scan outside this directory are rejected with an error. If you need to scan a different folder, configure the `ALLOWED_SCAN_DIR` environment variable in your `.env` file.
+
+</details>
+
+<details>
+<summary><strong>Windows 7/8: <code>npm install</code> fails</strong></summary>
+
+Node.js 18+ (required by Next.js) does **not** support Windows 7 or 8. You must use **Windows 10** (version 1809+) or later. See the [Windows Setup Guide](WINDOWS.md) for alternatives.
+
+</details>
 
 ---
 

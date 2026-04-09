@@ -63,12 +63,14 @@ cd ..
 # Terminal 1 — Backend
 cd backend
 .venv\Scripts\activate
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+python run.py
 
 # Terminal 2 — Frontend
 cd frontend
 npm run dev
 ```
+
+> ⚠️ **Do not use** `uvicorn app.main:app --reload` directly on Windows — it causes `NotImplementedError` for subprocess calls. Always use `python run.py`.
 
 Open **http://localhost:3000** and start transcribing!
 
