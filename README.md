@@ -261,6 +261,9 @@ erDiagram
 
 ### Prerequisites
 
+- **OS:** Windows 10+, macOS 10.15+, or Linux (Ubuntu 20.04+)
+  - ⚠️ Windows 7/8/8.1 are **not supported** (Node.js 18+ requires Windows 10+)
+  - 🪟 See [**Windows Setup Guide**](WINDOWS.md) for Windows-specific instructions
 - **Python 3.11+**
 - **Node.js 18+**
 - **ffmpeg** (`brew install ffmpeg` on macOS)
@@ -292,12 +295,12 @@ Open **http://localhost:3000** and start transcribing!
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # Configure API keys (optional — local Whisper works without any keys)
 # IMPORTANT: .env must stay inside backend/ — the app reads it from here
-cp .env.example .env
+cp .env.example .env       # Windows: copy .env.example .env
 # Edit .env to add your API keys (at least one: GROQ_API_KEY or HUGGINGFACE_API_KEY)
 # Note: Groq free tier is limited to 20 requests/min — the app auto-paces and retries
 ```
@@ -324,6 +327,8 @@ npm run dev
 </details>
 
 Open **http://localhost:3000** and start transcribing!
+
+> 🪟 **Windows users:** You can also use `start.bat` to launch both servers at once. See the [Windows Setup Guide](WINDOWS.md) for full instructions.
 
 ### API Keys (Optional)
 
@@ -391,7 +396,10 @@ blitzai/
 │   │   └── lib/                 # API client & utils
 │   └── package.json
 ├── README.md
-└── SETUP_GUIDE.md
+├── SETUP_GUIDE.md
+├── WINDOWS.md
+├── start.sh
+└── start.bat
 ```
 
 ---

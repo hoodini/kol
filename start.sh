@@ -2,6 +2,20 @@
 # Blitz AI - Start Script
 # Launches both backend and frontend servers
 
+# Detect Windows (Git Bash / MSYS / Cygwin) and redirect to start.bat
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [ -f "$SCRIPT_DIR/start.bat" ]; then
+        echo "⚠️  Detected Windows — use start.bat instead:"
+        echo "   cmd /c start.bat"
+        echo ""
+        echo "   Or run manually:"
+        echo "   Terminal 1: cd backend && .venv\\Scripts\\activate && uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"
+        echo "   Terminal 2: cd frontend && npm run dev"
+        exit 0
+    fi
+fi
+
 echo "⚡  Starting Blitz AI - Transcription Studio"
 echo "   Built by Yuval Avidani — https://yuv.ai"
 echo ""
