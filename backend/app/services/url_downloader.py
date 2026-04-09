@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from app.config import settings
+from app.services.exec_resolver import YT_DLP
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ async def get_url_info(url: str) -> VideoInfo:
     is_playlist = is_playlist_url(url)
 
     cmd = [
-        "yt-dlp",
+        YT_DLP,
         "--dump-json",
         "--no-download",
     ]
@@ -153,7 +154,7 @@ async def download_audio(
     video_path = None
     if keep_video:
         vid_cmd = [
-            "yt-dlp",
+            YT_DLP,
             "--format", "bv*+ba/b",  # Best video + best audio, any format
             "--merge-output-format", "mp4",
             "--no-playlist",
@@ -209,7 +210,7 @@ async def download_audio(
     # Step 2: Extract audio as WAV for transcription
     audio_template = str(output_dir / "%(title)s_audio.%(ext)s")
     audio_cmd = [
-        "yt-dlp",
+        YT_DLP,
         "--extract-audio",
         "--audio-format", "wav",
         "--audio-quality", "0",

@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 
 from app.config import settings
+from app.services.exec_resolver import FFMPEG, FFPROBE
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 async def probe_audio(file_path: str | Path) -> dict:
     """Get audio/video file metadata using ffprobe."""
     cmd = [
-        "ffprobe", "-v", "quiet",
+        FFPROBE, "-v", "quiet",
         "-print_format", "json",
         "-show_format", "-show_streams",
         str(file_path),
@@ -54,7 +55,7 @@ async def convert_to_wav(
     output_path = Path(output_path)
 
     cmd = [
-        "ffmpeg", "-y", "-i", str(input_path),
+        FFMPEG, "-y", "-i", str(input_path),
         "-vn",  # No video
         "-acodec", "pcm_s16le",
         "-ar", str(sample_rate),
@@ -110,7 +111,7 @@ async def split_into_chunks(
         chunk_path = chunks_dir / f"chunk_{chunk_idx:04d}.wav"
 
         cmd = [
-            "ffmpeg", "-y",
+            FFMPEG, "-y",
             "-i", str(wav_path),
             "-ss", str(start),
             "-t", str(end - start),
