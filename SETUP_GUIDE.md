@@ -487,7 +487,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```powershell
 cd $HOME\Desktop\blitzai\backend
 .\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+python run.py
 ```
 
 </details>
@@ -498,7 +498,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```cmd
 cd %USERPROFILE%\Desktop\blitzai\backend
 .venv\Scripts\activate.bat
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+python run.py
 ```
 
 </details>
@@ -711,7 +711,7 @@ cd ~/Desktop/blitzai/frontend && npm run dev
 
 **PowerShell 1:**
 ```powershell
-cd $HOME\Desktop\blitzai\backend; .\.venv\Scripts\Activate.ps1; uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+cd $HOME\Desktop\blitzai\backend; .\.venv\Scripts\Activate.ps1; python run.py
 ```
 
 **PowerShell 2:**
