@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     processed_dir: Path = base_dir / "processed"
     export_dir: Path = base_dir / "exports"
     db_path: Path = base_dir / "kol.db"
+    allowed_scan_dir: Path = base_dir / "uploads"
 
     # Whisper settings
     whisper_model: str = "large-v3"
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
 
     def ensure_dirs(self):
         """Create all required directories."""
-        for d in [self.upload_dir, self.processed_dir, self.export_dir]:
+        for d in [self.upload_dir, self.processed_dir, self.export_dir, self.allowed_scan_dir]:
             d.mkdir(parents=True, exist_ok=True)
 
 
