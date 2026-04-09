@@ -1,0 +1,23 @@
+{
+  "name": "blitzai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blitz AI — Professional Transcription Studio with Hebrew-first support",
+  "scripts": {
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+    "postinstall": "npm run install:frontend",
+    "dev": "concurrently -n backend,frontend -c magenta,cyan \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && PYTHONPATH=. .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload",
+    "build": "cd frontend && npm run build",
+    "lint": "cd frontend && npm run lint",
+    "setup": "npm install && npm run install:backend",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "keywords": ["transcription", "whisper", "hebrew", "fastapi", "nextjs"],
+  "license": "MIT"
+}

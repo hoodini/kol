@@ -273,7 +273,21 @@ git clone https://github.com/hoodini/blitzai.git
 cd blitzai
 ```
 
-### 2. Backend Setup
+### 2. Install & Run (Quick Way)
+
+```bash
+npm run setup   # Installs frontend + creates Python venv + installs backend deps
+npm run dev     # Starts both backend and frontend
+```
+
+Open **http://localhost:3000** and start transcribing!
+
+### Manual Setup (Alternative)
+
+<details>
+<summary>Click to expand manual setup steps</summary>
+
+#### Backend
 
 ```bash
 cd backend
@@ -288,14 +302,14 @@ cp .env.example .env
 # Note: Groq free tier is limited to 20 requests/min — the app auto-paces and retries
 ```
 
-### 3. Frontend Setup
+#### Frontend
 
 ```bash
 cd ../frontend
 npm install
 ```
 
-### 4. Run
+#### Run
 
 ```bash
 # Terminal 1 — Backend
@@ -306,6 +320,8 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 cd frontend
 npm run dev
 ```
+
+</details>
 
 Open **http://localhost:3000** and start transcribing!
 
