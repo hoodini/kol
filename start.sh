@@ -10,7 +10,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; t
         echo "   cmd /c start.bat"
         echo ""
         echo "   Or run manually:"
-        echo "   Terminal 1: cd backend && .venv\\Scripts\\activate && uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload"
+        echo "   Terminal 1: cd backend && .venv\\Scripts\\activate && python run.py"
         echo "   Terminal 2: cd frontend && npm run dev"
         exit 0
     fi
