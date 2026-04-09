@@ -40,12 +40,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Check for .env
-if not exist "%DIR%\.env" (
-    if exist "%DIR%\.env.example" (
+REM Check for .env (must be inside backend/)
+if not exist "%DIR%\backend\.env" (
+    if exist "%DIR%\backend\.env.example" (
         echo   No .env file found. Copying from .env.example...
-        copy "%DIR%\.env.example" "%DIR%\.env" >nul
-        echo   Edit .env to add your API keys ^(optional for local transcription^)
+        copy "%DIR%\backend\.env.example" "%DIR%\backend\.env" >nul
+        echo   Edit backend\.env to add your API keys ^(optional for local transcription^)
     )
 )
 

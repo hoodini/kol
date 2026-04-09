@@ -27,17 +27,17 @@ NC='\033[0m'
 # Get script directory
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check for .env
-if [ ! -f "$DIR/.env" ]; then
+# Check for .env (must be inside backend/)
+if [ ! -f "$DIR/backend/.env" ]; then
     echo "⚠️  No .env file found. Copying from .env.example..."
-    cp "$DIR/.env.example" "$DIR/.env"
-    echo "   Edit .env to add your API keys (optional for local transcription)"
+    cp "$DIR/backend/.env.example" "$DIR/backend/.env"
+    echo "   Edit backend/.env to add your API keys (optional for local transcription)"
 fi
 
 # Start backend
 echo -e "${PINK}Starting backend (FastAPI)...${NC}"
 cd "$DIR"
-PYTHONPATH="$DIR/backend" "$DIR/.venv/bin/uvicorn" app.main:app --host 127.0.0.1 --port 8000 --reload --app-dir "$DIR/backend" &
+PYTHONPATH="$DIR/backend" "$DIR/backend/.venv/bin/uvicorn" app.main:app --host 127.0.0.1 --port 8000 --reload --app-dir "$DIR/backend" &
 BACKEND_PID=$!
 echo "   Backend PID: $BACKEND_PID"
 
