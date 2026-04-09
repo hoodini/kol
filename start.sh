@@ -27,6 +27,13 @@ PYTHONPATH="$DIR/backend" "$DIR/.venv/bin/uvicorn" app.main:app --host 127.0.0.1
 BACKEND_PID=$!
 echo "   Backend PID: $BACKEND_PID"
 
+# Install frontend dependencies if needed
+if [ ! -d "$DIR/frontend/node_modules" ]; then
+    echo -e "${PINK}Installing frontend dependencies...${NC}"
+    cd "$DIR/frontend"
+    npm install
+fi
+
 # Start frontend
 echo -e "${PINK}Starting frontend (Next.js)...${NC}"
 cd "$DIR/frontend"
