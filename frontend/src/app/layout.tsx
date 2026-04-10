@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl" className={`${heebo.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full font-sans bg-background text-foreground">
+      <body className="min-h-full font-sans bg-background text-foreground" suppressHydrationWarning>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

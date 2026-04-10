@@ -287,6 +287,62 @@ async def transcribe_folder(
     }
 
 
+@router.post("/retry-all-failed")
+async def retry_all_failed(
+    background_tasks: BackgroundTasks,
+    engine: str = "groq",
+    db: AsyncSession = Depends(get_db),
+):
+    """Retry all failed projects with the specified engine."""
+    result = await db.execute(
+        select(Project).where(Project.status == "error")
+    )
+    failed_projects = result.scalars().all()
+
+    if not failed_projects:
+        return {"count": 0, "message": "No failed projects to retry"}
+
+    retried = []
+    for project in failed_projects:
+        # Clear old transcript data
+        versions = (await db.execute(
+            select(TranscriptVersion).where(TranscriptVersion.project_id == project.id)
+        )).scalars().all()
+        for v in versions:
+            segments = (await db.execute(
+                select(Segment).where(Segment.version_id == v.id)
+            )).scalars().all()
+            for seg in segments:
+                words = (await db.execute(
+                    select(Word).where(Word.segment_id == seg.id)
+                )).scalars().all()
+                for w in words:
+                    await db.delete(w)
+                await db.delete(seg)
+            await db.delete(v)
+
+        project.status = "pending"
+        project.progress = 0.0
+        project.error_message = None
+        project.engine_used = None
+
+        if project.source_url:
+            background_tasks.add_task(
+                _download_and_transcribe,
+                project.id, project.source_url, engine, project.language or "he",
+            )
+        elif project.source_path:
+            background_tasks.add_task(
+                _run_transcription,
+                project.id, Path(project.source_path), engine, project.language or "he",
+            )
+        retried.append(project.id)
+
+    await db.commit()
+    logger.info(f"[retry-all] Retrying {len(retried)} failed projects with engine={engine}")
+    return {"count": len(retried), "project_ids": retried, "engine": engine, "status": "retrying"}
+
+
 @router.post("/retry/{project_id}")
 async def retry_transcription(
     project_id: str,
@@ -342,62 +398,6 @@ async def retry_transcription(
 
     logger.info(f"[retry:{project_id[:8]}] Retrying with engine={retry_engine}")
     return {"project_id": project.id, "status": "retrying", "engine": retry_engine}
-
-
-@router.post("/retry-all-failed")
-async def retry_all_failed(
-    background_tasks: BackgroundTasks,
-    engine: str = "groq",
-    db: AsyncSession = Depends(get_db),
-):
-    """Retry all failed projects with the specified engine."""
-    result = await db.execute(
-        select(Project).where(Project.status == "error")
-    )
-    failed_projects = result.scalars().all()
-
-    if not failed_projects:
-        return {"count": 0, "message": "No failed projects to retry"}
-
-    retried = []
-    for project in failed_projects:
-        # Clear old transcript data
-        versions = (await db.execute(
-            select(TranscriptVersion).where(TranscriptVersion.project_id == project.id)
-        )).scalars().all()
-        for v in versions:
-            segments = (await db.execute(
-                select(Segment).where(Segment.version_id == v.id)
-            )).scalars().all()
-            for seg in segments:
-                words = (await db.execute(
-                    select(Word).where(Word.segment_id == seg.id)
-                )).scalars().all()
-                for w in words:
-                    await db.delete(w)
-                await db.delete(seg)
-            await db.delete(v)
-
-        project.status = "pending"
-        project.progress = 0.0
-        project.error_message = None
-        project.engine_used = None
-
-        if project.source_url:
-            background_tasks.add_task(
-                _download_and_transcribe,
-                project.id, project.source_url, engine, project.language or "he",
-            )
-        elif project.source_path:
-            background_tasks.add_task(
-                _run_transcription,
-                project.id, Path(project.source_path), engine, project.language or "he",
-            )
-        retried.append(project.id)
-
-    await db.commit()
-    logger.info(f"[retry-all] Retrying {len(retried)} failed projects with engine={engine}")
-    return {"count": len(retried), "project_ids": retried, "engine": engine, "status": "retrying"}
 
 
 # ─── Background Tasks ────────────────────────────
