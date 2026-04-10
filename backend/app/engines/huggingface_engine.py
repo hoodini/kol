@@ -96,6 +96,11 @@ class HuggingFaceEngine:
 
         data = response.json()
 
+        # HuggingFace error responses come as {"error": "..."} with status 200
+        if isinstance(data, dict) and "error" in data:
+            error_msg = data["error"]
+            raise RuntimeError(f"HuggingFace model error: {error_msg}")
+
         # Parse response — HF ASR returns {"text": "..."} or {"chunks": [...]}
         if isinstance(data, dict):
             text = data.get("text", "")

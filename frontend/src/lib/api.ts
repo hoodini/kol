@@ -92,6 +92,12 @@ export const api = {
       body: JSON.stringify({ folder_path: folderPath, engine, language }),
     }),
 
+  retryProject: (id: string, engine?: string) =>
+    request(`/api/transcribe/retry/${id}?engine=${engine || "groq"}`, { method: "POST" }),
+
+  retryAllFailed: (engine: string = "groq") =>
+    request<{ count: number; project_ids: string[] }>(`/api/transcribe/retry-all-failed?engine=${engine}`, { method: "POST" }),
+
   // Studio
   getStudioData: (projectId: string, version?: number) => {
     const qs = version ? `?version=${version}` : "";

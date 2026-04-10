@@ -11,9 +11,11 @@ from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from sqlalchemy import select
+
 from app.config import settings
 from app.database import async_session, get_db
-from app.models import Project
+from app.models import Project, Segment, TranscriptVersion, Word
 from app.schemas import TranscribeFolderRequest, TranscribeURLRequest
 from app.services.transcription_manager import get_available_engines, transcribe_file
 from app.services.url_downloader import download_audio, download_playlist, get_url_info
@@ -283,6 +285,119 @@ async def transcribe_folder(
         "folder": request.folder_path,
         "status": "started",
     }
+
+
+@router.post("/retry/{project_id}")
+async def retry_transcription(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    engine: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Retry a failed transcription with the same or a different engine."""
+    project = await db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.status not in ("error",):
+        raise HTTPException(status_code=400, detail=f"Project is '{project.status}', not 'error'")
+
+    # Clear old transcript data
+    versions = (await db.execute(
+        select(TranscriptVersion).where(TranscriptVersion.project_id == project_id)
+    )).scalars().all()
+    for v in versions:
+        segments = (await db.execute(
+            select(Segment).where(Segment.version_id == v.id)
+        )).scalars().all()
+        for seg in segments:
+            words = (await db.execute(
+                select(Word).where(Word.segment_id == seg.id)
+            )).scalars().all()
+            for w in words:
+                await db.delete(w)
+            await db.delete(seg)
+        await db.delete(v)
+
+    # Reset project state
+    retry_engine = engine or "groq"
+    project.status = "pending"
+    project.progress = 0.0
+    project.error_message = None
+    project.engine_used = None
+    await db.commit()
+
+    # Re-run transcription
+    if project.source_url:
+        background_tasks.add_task(
+            _download_and_transcribe,
+            project.id, project.source_url, retry_engine, project.language or "he",
+        )
+    elif project.source_path:
+        background_tasks.add_task(
+            _run_transcription,
+            project.id, Path(project.source_path), retry_engine, project.language or "he",
+        )
+    else:
+        raise HTTPException(status_code=400, detail="No source file or URL to retry")
+
+    logger.info(f"[retry:{project_id[:8]}] Retrying with engine={retry_engine}")
+    return {"project_id": project.id, "status": "retrying", "engine": retry_engine}
+
+
+@router.post("/retry-all-failed")
+async def retry_all_failed(
+    background_tasks: BackgroundTasks,
+    engine: str = "groq",
+    db: AsyncSession = Depends(get_db),
+):
+    """Retry all failed projects with the specified engine."""
+    result = await db.execute(
+        select(Project).where(Project.status == "error")
+    )
+    failed_projects = result.scalars().all()
+
+    if not failed_projects:
+        return {"count": 0, "message": "No failed projects to retry"}
+
+    retried = []
+    for project in failed_projects:
+        # Clear old transcript data
+        versions = (await db.execute(
+            select(TranscriptVersion).where(TranscriptVersion.project_id == project.id)
+        )).scalars().all()
+        for v in versions:
+            segments = (await db.execute(
+                select(Segment).where(Segment.version_id == v.id)
+            )).scalars().all()
+            for seg in segments:
+                words = (await db.execute(
+                    select(Word).where(Word.segment_id == seg.id)
+                )).scalars().all()
+                for w in words:
+                    await db.delete(w)
+                await db.delete(seg)
+            await db.delete(v)
+
+        project.status = "pending"
+        project.progress = 0.0
+        project.error_message = None
+        project.engine_used = None
+
+        if project.source_url:
+            background_tasks.add_task(
+                _download_and_transcribe,
+                project.id, project.source_url, engine, project.language or "he",
+            )
+        elif project.source_path:
+            background_tasks.add_task(
+                _run_transcription,
+                project.id, Path(project.source_path), engine, project.language or "he",
+            )
+        retried.append(project.id)
+
+    await db.commit()
+    logger.info(f"[retry-all] Retrying {len(retried)} failed projects with engine={engine}")
+    return {"count": len(retried), "project_ids": retried, "engine": engine, "status": "retrying"}
 
 
 # ─── Background Tasks ────────────────────────────

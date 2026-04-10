@@ -30,6 +30,9 @@ const translations = {
   "projects.rename": { he: "שנה שם", en: "Rename" },
   "projects.delete": { he: "מחק", en: "Delete" },
   "projects.confirmDelete": { he: "למחוק את הפרויקט?", en: "Delete this project?" },
+  "projects.retry": { he: "נסה שוב", en: "Retry" },
+  "projects.retryAll": { he: "נסה שוב הכל", en: "Retry All Failed" },
+  "projects.retrying": { he: "מנסה שוב...", en: "Retrying..." },
 
   // Project statuses
   "status.completed": { he: "הושלם", en: "Completed" },

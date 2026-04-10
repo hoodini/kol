@@ -24,6 +24,7 @@ import {
   Check,
   X,
   Plus,
+  RotateCcw,
 } from "lucide-react";
 
 function formatElapsed(seconds: number, lang: "he" | "en"): string {
@@ -137,6 +138,40 @@ export default function ProjectsPage() {
     }
   };
 
+  const retryProject = async (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await api.retryProject(projectId, "groq");
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === projectId ? { ...p, status: "pending", progress: 0, error_message: undefined } : p
+        )
+      );
+    } catch (err: any) {
+      console.error("Retry failed:", err);
+    }
+  };
+
+  const retryAllFailed = async () => {
+    try {
+      const result = await api.retryAllFailed("groq");
+      if (result.count > 0) {
+        setProjects((prev) =>
+          prev.map((p) =>
+            result.project_ids.includes(p.id)
+              ? { ...p, status: "pending", progress: 0, error_message: undefined }
+              : p
+          )
+        );
+      }
+    } catch (err: any) {
+      console.error("Retry all failed:", err);
+    }
+  };
+
+  const hasFailedProjects = projects.some((p) => p.status === "error");
+
   const getStatusInfo = (status: string) => {
     switch (status) {
       case "completed":
@@ -170,13 +205,24 @@ export default function ProjectsPage() {
             {projects.length} {t("projects.count", language)}
           </p>
         </div>
-        <Link
-          href="/transcribe"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-primary/20"
-        >
-          <Plus className="w-4 h-4" />
-          {t("nav.transcribe", language)}
-        </Link>
+        <div className="flex items-center gap-2">
+          {hasFailedProjects && (
+            <button
+              onClick={retryAllFailed}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              {t("projects.retryAll", language)}
+            </button>
+          )}
+          <Link
+            href="/transcribe"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+          >
+            <Plus className="w-4 h-4" />
+            {t("nav.transcribe", language)}
+          </Link>
+        </div>
       </div>
 
       {/* Search */}
@@ -344,6 +390,15 @@ export default function ProjectsPage() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {!isRenaming && (
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {project.status === "error" && (
+                            <button
+                              onClick={(e) => retryProject(e, project.id)}
+                              className="p-2 rounded-lg hover:bg-primary/10 text-primary hover:text-primary transition-colors"
+                              title={t("projects.retry", language)}
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={(e) => startRename(e, project)}
                             className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
