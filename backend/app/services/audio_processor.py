@@ -15,7 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 async def probe_audio(file_path: str | Path) -> dict:
-    """Get audio/video file metadata using ffprobe."""
+    """Get audio/video file metadata using ffprobe, with ffmpeg fallback."""
+    try:
+        return await _probe_with_ffprobe(file_path)
+    except OSError as e:
+        logger.warning(f"ffprobe blocked ({e}), falling back to ffmpeg for duration")
+        return await _probe_with_ffmpeg(file_path)
+
+
+async def _probe_with_ffprobe(file_path: str | Path) -> dict:
+    """Probe using ffprobe (preferred)."""
     cmd = [
         FFPROBE, "-v", "quiet",
         "-print_format", "json",
@@ -37,6 +46,32 @@ async def probe_audio(file_path: str | Path) -> dict:
         "duration": duration,
         "format": info.get("format", {}).get("format_name", "unknown"),
         "streams": len(info.get("streams", [])),
+    }
+
+
+async def _probe_with_ffmpeg(file_path: str | Path) -> dict:
+    """Fallback: extract duration using ffmpeg -i (reads stderr output)."""
+    import re
+
+    cmd = [FFMPEG, "-i", str(file_path), "-f", "null", "-"]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    stderr_text = stderr.decode(errors="replace")
+
+    match = re.search(r"Duration:\s*(\d+):(\d+):(\d+)\.(\d+)", stderr_text)
+    if match:
+        h, m, s, cs = int(match.group(1)), int(match.group(2)), int(match.group(3)), int(match.group(4))
+        duration = h * 3600 + m * 60 + s + cs / 100.0
+    else:
+        duration = 0.0
+        logger.warning(f"Could not parse duration from ffmpeg output for {file_path}")
+
+    return {
+        "duration": duration,
+        "format": "unknown",
+        "streams": 0,
     }
 
 
