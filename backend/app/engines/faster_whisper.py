@@ -25,10 +25,17 @@ def _get_model():
 
         device = settings.whisper_device
         if device == "auto":
-            # Apple Silicon: use CPU with int8 for best perf/memory ratio
-            # faster-whisper doesn't support MPS directly, but CPU int8 is fast on M4
-            device = "cpu"
-            compute_type = "int8"
+            try:
+                import ctranslate2
+                if ctranslate2.get_cuda_device_count() > 0:
+                    device = "cuda"
+                    compute_type = "float16"
+                else:
+                    device = "cpu"
+                    compute_type = "int8"
+            except Exception:
+                device = "cpu"
+                compute_type = "int8"
         else:
             compute_type = settings.whisper_compute_type
 
