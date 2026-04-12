@@ -86,7 +86,7 @@ export default function ProjectsPage() {
       const data = await api.listProjects(search ? { search } : undefined);
       setProjects(data.projects);
     } catch (err) {
-      console.error("Failed to load projects:", err);
+      console.warn("Failed to load projects (will retry):", err);
     } finally {
       setLoading(false);
     }
